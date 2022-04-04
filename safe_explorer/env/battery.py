@@ -1,0 +1,211 @@
+import gym
+from gym.spaces import Box, Dict
+import numpy as np
+from numpy import linalg as LA
+import os
+import scipy.io as spio     # Work with .mat files
+
+
+from safe_explorer.core.config import Config
+
+
+class Battery(gym.Env):
+    def __init__(self):
+        self._config = Config.get().env.battery                              # Maxi: Complete config for battery model
+        # Set the properties for spaces
+        self.action_space = Box(low=0., high=46., shape=(self._config.n,), dtype=np.float32)          # Maxi: Current
+        self.observation_space = Dict({
+            'agent_position': Box(low=5., high=45., shape=(self._config.n,), dtype=np.float32),      # Maxi: Temperature
+            'agent_soc': Box(low=0.2, high=0.8, shape=(self._config.n,), dtype=np.float32),
+            'agent_voltage': Box(low=2., high=3.6, shape=(self._config.n,), dtype=np.float32)
+        })
+
+        # Sets all the episode specific variables
+
+        self.sigma = [self._config.ito_soc, self._config.ito_soh]
+        self.cbat = self._config.Cn * 3600
+        self.soc = self._config.init_soc
+        self.soh = self._config.init_soh
+        self.vc1 = self._config.vc1
+        self.vc2 = self._config.vc2
+        self.dt = self._config.frequency_ratio
+
+        self.Tc = self._config.Tc
+        self.Ts = self._config.Ts
+
+
+        ## Load maps
+        print(os.getcwd())
+        dir_current = os.getcwd()
+        mat = spio.loadmat(dir_current + '/safe_explorer/env/battery_mappings.mat', squeeze_me=True)
+        self.ocv_map = np.array(mat['ocv_curve'])
+        self.soc_map = np.linspace(0, 1, len(self.ocv_map))
+        self.ocv = self.calculate_ocv(self.soc)
+        self.v_batt = self.ocv
+
+        self.reset()
+
+    def reset(self):
+        if self._config.random_start:
+            self.soc = np.random.random()
+            self.soh = np.random.random()
+            self.Tc = 23
+            self.Ts = 23
+            self.vc1 = 0
+            self.vc2 = 0
+            self.ocv = self.calculate_ocv(self.soc)
+        else:
+            self.soc = self._config.init_soc
+            self.soh = self._config.init_soh
+            self.Tc = 23
+            self.Ts = 23
+            self.vc1 = 0
+            self.vc2 = 0
+            self.ocv = self.calculate_ocv(self.soc)
+
+        self._current_time = 0.
+        self._move_agent(0.)
+
+        observation = {
+            "agent_position": self._agent_position,      # Este da el constraint (Tm = Average Temperature)
+            "agent_soc": self.soc,
+            "agent_voltage": self.v_batt*np.ones(self._config.n,  dtype=np.float32)
+        }
+
+        return observation
+        # return self.step(np.zeros(self._config.n))[0]
+
+    def _get_reward(self):                                                  # Maxi: Modify reward taking account SOC & I
+        """
+        if self._config.enable_reward_shaping and self._is_agent_outside_shaping_boundary():
+            return -1
+        else:
+            return np.clip(1 - 10 * LA.norm(self._agent_position - self._target_position) ** 2, 0, 1)
+        """
+        if self.soc > 0.8:
+            r = 1.
+        else:
+            r = 1. - 2.*(1. - self.soc)     # [-1, -0.6)
+        return r
+
+    def _move_agent(self, current):
+        # Old: Assume that frequency of motor is 1 (one action per second)
+
+        self.calculate_params(current)          # Tm
+        self.soc = self.calculate_soc(current)
+        self.soh = self.calculate_soh(current)
+        self.ocv = self.calculate_ocv(self.soc)
+        self.v_batt = self.ocv - current * self.R0 - self.compute_vc1(current) - self.compute_vc2(current)
+
+    def _is_agent_outside_boundary(self):
+        return np.any(self._agent_position < 5.) or np.any(self._agent_position > 45.)
+
+    def _is_agent_outside_shaping_boundary(self):
+        return np.any(self._agent_position < self._config.reward_shaping_slack) \
+               or np.any(self._agent_position > 1 - self._config.reward_shaping_slack)
+
+    def _update_time(self):
+        # Assume that frequency of motor is 1 (one action per second)
+        self._current_time += self._config.frequency_ratio
+
+    def get_num_constraints(self):
+        return 2 * self._config.n
+
+    def get_constraint_values(self):
+        # For any given n, there will be 2 * n constraints
+        # a lower and upper bound for each dim
+        # We define all the constraints such that C_i = 0
+        # _agent_position > 0 + _agent_slack => -_agent_position + _agent_slack < 0
+        min_constraints = self._config.agent_slack - self._agent_position
+        # _agent_position < 1 - _agent_slack => _agent_position + agent_slack- 1 < 0
+        max_constraint = self._agent_position + self._config.agent_slack - 1
+
+        return np.concatenate([min_constraints, max_constraint])
+
+    def step(self, action):
+
+        # Increment time
+        self._update_time()
+
+        last_reward = self._get_reward()
+        # Calculate new position of the agent
+        self._move_agent(action)
+
+        # Find reward
+        reward = self._get_reward()
+        step_reward = reward - last_reward
+
+        # Prepare return payload
+        observation = {
+            "agent_position": self._agent_position,
+            "agent_soc": self.soc,
+            "agent_voltage": self.v_batt*np.ones(self._config.n,  dtype=np.float32)
+        }
+
+        done = self._is_agent_outside_boundary() \
+               or int(self._current_time // 1) > self._config.episode_length
+
+        return observation, step_reward, done, {}
+
+    def calculate_params(self, i):
+        self.crate = abs(i / self.cbat)     # c-rate
+        self.M = 1687.2 * self.crate**3 - 9522 * self.crate**2 + 6806.8 * self.crate + 32658  # per-exponential factor
+        self.Ea = 31700 - 370.3 * self.crate  # activation energy
+        self.Atol = (20 / (self.M * np.exp(-self.Ea /(self._config.R*(self.Tc + 273.15)))))**(1/self._config.z)  # total discharged Ah
+        self.N = 3600 * self.Atol / self.cbat       # number of cycles
+        self.Tm = np.array([(self.Ts + self.Tc) / 2.]).flatten()  # average temperature
+        self._agent_position = self.Tm
+
+        if i < 0:
+            self.R0 = self._config.R0c * np.exp(self._config.Tref_R0c/(self.Tm - self._config.Tshift_R0c))
+            self.R1 = (self._config.R1c[0] + self._config.R1c[1]*self.soc + self._config.R1c[2]*self.soc**2) * \
+                      np.exp(self._config.Tref_R1c/(self.Tm - self._config.Tshift_R1c))
+            self.R2 = (self._config.R2c[0] + self._config.R2c[1]*self.soc + self._config.R2c[2]*self.soc**2) * \
+                      np.exp(self._config.Tref_R2c/self.Tm)
+            self.C1 = self._config.C1c[0] + self._config.C1c[1]*self.soc + self._config.C1c[2]*self.soc**2 + \
+                      (self._config.C1c[3] + self._config.C1c[4]*self.soc + self._config.C1c[5]*self.soc**2)*self.Tm
+            self.C2 = self._config.C2c[0] + self._config.C2c[1]*self.soc + self._config.C2c[2]*self.soc**2 + \
+                      (self._config.C2c[3] + self._config.C2c[4]*self.soc + self._config.C2c[5]*self.soc**2)*self.Tm
+        else:
+            self.R0 = self._config.R0d * np.exp(self._config.Tref_R0d/(self.Tm - self._config.Tshift_R0d))
+            self.R1 = (self._config.R1d[0] + self._config.R1d[1]*self.soc + self._config.R1d[2]*self.soc**2) * \
+                      np.exp(self._config.Tref_R1d/(self.Tm - self._config.Tshift_R1d))
+            self.R2 = (self._config.R2d[0] + self._config.R2d[1]*self.soc + self._config.R2d[2]*self.soc**2) * \
+                      np.exp(self._config.Tref_R2d/self.Tm)
+            self.C1 = self._config.C1d[0] + self._config.C1d[1]*self.soc + self._config.C1d[2]*self.soc**2 + \
+                      (self._config.C1d[3] + self._config.C1d[4]*self.soc + self._config.C1d[5]*self.soc**2)*self.Tm
+            self.C2 = self._config.C2d[0] + self._config.C2d[1]*self.soc + self._config.C2d[2]*self.soc**2 + \
+                      (self._config.C2d[3] + self._config.C2d[4]*self.soc + self._config.C2d[5]*self.soc**2)*self.Tm
+
+        self.alfa1 = 1 / (self.R1 * self.C1)
+        self.beta1 = 1 / self.C1
+        self.alfa2 = 1 / (self.R2 * self.C2)
+        self.beta2 = 1 / self.C2
+
+    def calculate_soc(self, i):
+        e = np.random.randn(1) * self._config.pdfstd + self._config.pdfmean
+        dw = (e * (np.sqrt(self._config.dtao)))  # brownian motion
+        w_soc = 1e-3 * self.sigma[0] * dw  # variability soc
+        return self.soc + (-i / self.cbat) * self.dt + w_soc
+
+    def calculate_soh(self, i):
+        self.Tc = self.Tc + ((self.Ts - self.Tc) / (self._config.Rc * self._config.Cc) + i *
+                             (self.vc1 + self.vc2 + self.R0 * i) / self._config.Cc) * self.dt
+        self.Ts = self.Ts + ((self._config.Tf - self.Ts) / (self._config.Ru * self._config.Cs) -
+                             (self.Ts - self.Tc) / (self._config.Rc * self._config.Cc)) * self.dt
+
+        e = np.random.randn(1) * self._config.pdfstd + self._config.pdfmean
+        dw = (e * (np.sqrt(self._config.dtao)))  # brownian motion
+        w_soh = 1e-7 * self.sigma[1] * dw  # variability soc
+        return self.soh - (np.absolute(i) / (2 * self.N * self.cbat)) * self.dt + w_soh
+
+    def calculate_ocv(self, soc):
+        return np.interp(soc, self.soc_map, self.ocv_map)
+
+    def compute_vc1(self, i):
+        self.vc1 = self.vc1 + (-self.alfa1 * self.vc1 + self.beta1 * i) * (1 / self._config.frequency_ratio)
+        return self.vc1
+
+    def compute_vc2(self, i):
+        self.vc2 = self.vc2 + (-self.alfa2 * self.vc2 + self.beta2 * i) * (1 / self._config.frequency_ratio)
+        return self.vc2
