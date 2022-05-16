@@ -13,10 +13,10 @@ class Battery(gym.Env):
     def __init__(self):
         self._config = Config.get().env.battery                              # Maxi: Complete config for battery model
         # Set the properties for spaces
-        self.action_space = Box(low=0., high=46., shape=(self._config.n,), dtype=np.float32)          # Maxi: Current
+        self.action_space = Box(low=-1, high=1, shape=(self._config.n,), dtype=np.float32)          # Maxi: Current
         self.observation_space = Dict({
-            'agent_position': Box(low=5., high=45., shape=(self._config.n,), dtype=np.float32),      # Maxi: Temperature
-            'agent_soc': Box(low=0.2, high=0.8, shape=(self._config.n,), dtype=np.float32),
+            'agent_position': Box(low=0., high=1., shape=(self._config.n,), dtype=np.float32),      # Maxi: T = [5, 45]
+            'agent_soc': Box(low=0, high=1, shape=(self._config.n,), dtype=np.float32),
             'agent_voltage': Box(low=2., high=3.6, shape=(self._config.n,), dtype=np.float32)
         })
 
@@ -37,7 +37,8 @@ class Battery(gym.Env):
         ## Load maps
         print(os.getcwd())
         dir_current = os.getcwd()
-        mat = spio.loadmat(dir_current + '/safe_explorer/env/battery_mappings.mat', squeeze_me=True)
+        #mat = spio.loadmat(dir_current + '/safe_explorer/env/battery_mappings.mat', squeeze_me=True)
+        mat = spio.loadmat(dir_current + '\\safe_explorer\\env\\battery_mappings.mat', squeeze_me=True)
         self.ocv_map = np.array(mat['ocv_curve'])
         self.soc_map = np.linspace(0, 1, len(self.ocv_map))
         self.ocv = self.calculate_ocv(self.soc)
@@ -63,11 +64,12 @@ class Battery(gym.Env):
             self.vc2 = 0
             self.ocv = self.calculate_ocv(self.soc)
 
+        self.done = False
         self._current_time = 0.
-        self._move_agent(0.)
+        self._move_agent(1.)        # Default (0.) ... no deberia ser 1?
 
         observation = {
-            "agent_position": self._agent_position,      # Este da el constraint (Tm = Average Temperature)
+            "agent_position": self._agent_position,
             "agent_soc": self.soc,
             "agent_voltage": self.v_batt*np.ones(self._config.n,  dtype=np.float32)
         }
@@ -75,22 +77,15 @@ class Battery(gym.Env):
         return observation
         # return self.step(np.zeros(self._config.n))[0]
 
-    def _get_reward(self):                                                  # Maxi: Modify reward taking account SOC & I
-        """
-        if self._config.enable_reward_shaping and self._is_agent_outside_shaping_boundary():
-            return -1
+    def _get_reward(self):
+        if self.soc <= 1:
+            return self.soc - 1
         else:
-            return np.clip(1 - 10 * LA.norm(self._agent_position - self._target_position) ** 2, 0, 1)
-        """
-        if self.soc > 0.8:
-            r = 1.
-        else:
-            r = 1. - 2.*(1. - self.soc)     # [-1, -0.6)
-        return r
+            return -10
 
     def _move_agent(self, current):
         # Old: Assume that frequency of motor is 1 (one action per second)
-
+        current = np.clip(50.*(current - 1.), -100., 0.)        # default: [0 -46]
         self.calculate_params(current)          # Tm
         self.soc = self.calculate_soc(current)
         self.soh = self.calculate_soh(current)
@@ -98,7 +93,7 @@ class Battery(gym.Env):
         self.v_batt = self.ocv - current * self.R0 - self.compute_vc1(current) - self.compute_vc2(current)
 
     def _is_agent_outside_boundary(self):
-        return np.any(self._agent_position < 5.) or np.any(self._agent_position > 45.)
+        return np.any(self.soc < 0) or np.any(self.soc > 1)
 
     def _is_agent_outside_shaping_boundary(self):
         return np.any(self._agent_position < self._config.reward_shaping_slack) \
@@ -106,7 +101,8 @@ class Battery(gym.Env):
 
     def _update_time(self):
         # Assume that frequency of motor is 1 (one action per second)
-        self._current_time += self._config.frequency_ratio
+        #self._current_time += self._config.frequency_ratio
+        self._current_time += 1
 
     def get_num_constraints(self):
         return 2 * self._config.n
@@ -116,9 +112,11 @@ class Battery(gym.Env):
         # a lower and upper bound for each dim
         # We define all the constraints such that C_i = 0
         # _agent_position > 0 + _agent_slack => -_agent_position + _agent_slack < 0
+        #min_constraints = self._config.agent_slack - self._agent_position
         min_constraints = self._config.agent_slack - self._agent_position
         # _agent_position < 1 - _agent_slack => _agent_position + agent_slack- 1 < 0
-        max_constraint = self._agent_position + self._config.agent_slack - 1
+        #max_constraint = self._agent_position + self._config.agent_slack - 1
+        max_constraint = self._agent_position + self._config.agent_slack - 1.
 
         return np.concatenate([min_constraints, max_constraint])
 
@@ -127,13 +125,13 @@ class Battery(gym.Env):
         # Increment time
         self._update_time()
 
-        last_reward = self._get_reward()
+        #last_reward = self._get_reward()
         # Calculate new position of the agent
         self._move_agent(action)
 
         # Find reward
         reward = self._get_reward()
-        step_reward = reward - last_reward
+        #step_reward = reward - last_reward
 
         # Prepare return payload
         observation = {
@@ -142,10 +140,10 @@ class Battery(gym.Env):
             "agent_voltage": self.v_batt*np.ones(self._config.n,  dtype=np.float32)
         }
 
-        done = self._is_agent_outside_boundary() \
-               or int(self._current_time // 1) > self._config.episode_length
+        done = self._is_agent_outside_boundary()
+               #or int(self._current_time // 1) > self._config.episode_length
 
-        return observation, step_reward, done, {}
+        return observation, reward, done, {}
 
     def calculate_params(self, i):
         self.crate = abs(i / self.cbat)     # c-rate
@@ -154,7 +152,10 @@ class Battery(gym.Env):
         self.Atol = (20 / (self.M * np.exp(-self.Ea /(self._config.R*(self.Tc + 273.15)))))**(1/self._config.z)  # total discharged Ah
         self.N = 3600 * self.Atol / self.cbat       # number of cycles
         self.Tm = np.array([(self.Ts + self.Tc) / 2.]).flatten()  # average temperature
-        self._agent_position = self.Tm
+        #self._agent_position = self.Tm
+        self._agent_position = (self.Tm - 5.) / (45. - 5.)
+
+
 
         if i < 0:
             self.R0 = self._config.R0c * np.exp(self._config.Tref_R0c/(self.Tm - self._config.Tshift_R0c))
@@ -183,14 +184,23 @@ class Battery(gym.Env):
         self.beta2 = 1 / self.C2
 
     def calculate_soc(self, i):
-        e = np.random.randn(1) * self._config.pdfstd + self._config.pdfmean
-        dw = (e * (np.sqrt(self._config.dtao)))  # brownian motion
-        w_soc = 1e-3 * self.sigma[0] * dw  # variability soc
+        #e = np.random.randn(1) * self._config.pdfstd + self._config.pdfmean
+        #dw = (e * (np.sqrt(self._config.dtao)))  # brownian motion
+        #w_soc = 1e-3 * self.sigma[0] * dw  # variability soc        #default 1e-3
+        w_soc = [0.]
         return self.soc + (-i / self.cbat) * self.dt + w_soc
 
+
     def calculate_soh(self, i):
+
+        e = np.random.randn(1) * self._config.pdfstd + self._config.pdfmean
+        dw = (e * (np.sqrt(self._config.dtao)))  # brownian motion
+        w_tc = 1e-1 * self._config.ito_temp * dw  # variability soc        #default 1e-3
+        #w_tc = [0.]
+
         self.Tc = self.Tc + ((self.Ts - self.Tc) / (self._config.Rc * self._config.Cc) + i *
-                             (self.vc1 + self.vc2 + self.R0 * i) / self._config.Cc) * self.dt
+                             (self.vc1 + self.vc2 + self.R0 * i) / self._config.Cc) * self.dt + w_tc
+
         self.Ts = self.Ts + ((self._config.Tf - self.Ts) / (self._config.Ru * self._config.Cs) -
                              (self.Ts - self.Tc) / (self._config.Rc * self._config.Cc)) * self.dt
 
@@ -203,9 +213,9 @@ class Battery(gym.Env):
         return np.interp(soc, self.soc_map, self.ocv_map)
 
     def compute_vc1(self, i):
-        self.vc1 = self.vc1 + (-self.alfa1 * self.vc1 + self.beta1 * i) * (1 / self._config.frequency_ratio)
+        self.vc1 = self.vc1 + (-self.alfa1 * self.vc1 + self.beta1 * i) * self.dt
         return self.vc1
 
     def compute_vc2(self, i):
-        self.vc2 = self.vc2 + (-self.alfa2 * self.vc2 + self.beta2 * i) * (1 / self._config.frequency_ratio)
+        self.vc2 = self.vc2 + (-self.alfa2 * self.vc2 + self.beta2 * i) * self.dt
         return self.vc2

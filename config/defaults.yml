@@ -49,59 +49,176 @@ arguments:
           - name: "enable_reward_shaping"
             default: false
           - name: "reward_shaping_slack"
-            default: 0.1          
+            default: 0.1
+      - name: "battery"
+        help: "Battery environment configuration."
+        properties:
+          - name: "n"
+            default: 1
+          - name: "target_margin"
+            default: 0.2
+          - name: "agent_slack"
+            default: 0.2   #default:0.05 = 2.5°C
+          - name: "episode_length"
+            default: 300 #default:30
+          - name: "frequency_ratio"
+            default: 1. #default:0.1
+          - name: "respawn_interval"
+            default: 0.5
+          - name: "target_noise_std"
+            default: 0.05
+          - name: "enable_reward_shaping"
+            default: false
+          - name: "reward_shaping_slack"
+            default: 0.1
+          - name: "init_soc"
+            default: 0.3
+          - name: "init_soh"
+            default: 0.9
+          - name: "ito_soc"
+            default: 0.5
+          - name: "ito_soh"
+            default: 0.5
+          - name: "ito_temp"
+            default: 2    #default: 2 o 4   [0 , 2 , 4, 6]
+          - name: "frequency"
+            default: 1
+          - name: "random_start"
+            default: false
+          - name: "vc1"
+            default: 0
+          - name: "vc2"
+            default: 0
+          - name: "V_max"
+            default: 3.6
+          - name: "Tf"
+            help: "Ambient Temperature"
+            default: 23 #default:23
+          - name: "Tc"
+            help: "Core Temperature"
+            default: 23
+          - name: "Ts"
+            help: "Surface Temperature"
+            default: 23
+          - name: "Rc"
+            help: "Heat Conduction Resistance"
+            default: 1.94
+          - name: "Ru"
+            help: "Convection Resistance"
+            default: 3.08
+          - name: "Cc"
+            help: "Core Heat Capacity"
+            default: 62.7 #default: 62.7
+          - name: "Cs"
+            help: "Surface Heat Capacity"
+            default: 4.5
+          - name: "z"
+            help: "Power-law factor"
+            default: 0.55
+          - name: "R"
+            help: "Ideal gas constant"
+            default: 8.3144598
+          - name: "Cn"
+            help: "Nominal Capacity"
+            default: 2.3
+          - name: "dtao"
+            default: 6
+          - name: "pdfmean"
+            default: 0
+          - name: "pdfstd"
+            default: 1
+          - name: "R0c"
+            default: 0.0055
+          - name: "R0d"
+            default: 0.0048
+          - name: "Tref_R0c"
+            default: 22.2477
+          - name: "Tref_R0d"
+            default: 31.0494
+          - name: "Tshift_R0c"
+            default: -11.5943
+          - name: "Tshift_R0d"
+            default: -15.3253
+          - name: "R1c"
+            default: [ 0.0016, -0.0032, 0.0045 ]
+          - name: "R1d"
+            default: [ 7.1135e-4, -4.3865e-4, 2.3788e-4 ]
+          - name: "Tref_R1c"
+            default: 159.2819
+          - name: "Tref_R1d"
+            default: 347.4707
+          - name: "Tshift_R1c"
+            default: -41.4548
+          - name: "Tshift_R1d"
+            default: -79.5816
+          - name: "R2c"
+            default: [ 0.0113, -0.027, 0.0339 ]
+          - name: "R2d"
+            default: [ 0.0288, -0.073, 0.0605 ]
+          - name: "Tref_R2c"
+            default: 16.6712
+          - name: "Tref_R2d"
+            default: 17.0224
+          - name: "C1c"
+            default: [ 523.215, 6.4171e+3, -7.5555e+3, 50.7107, -131.2298, 162.4688 ]
+          - name: "C1d"
+            default: [ 335.4518, 3.1712e+3, -1.3214e+3, 53.2138, -65.4786, 44.3761 ]
+          - name: "C2c"
+            default: [ 6.2449e+4, -1.055e+5, 4.4432e+4, 198.9753, 7.5621e+3, -6.9365e+3 ]
+          - name: "C2d"
+            default: [ 3.1887e+4, -1.1593e+5, 1.0493e+5, 60.3114, 1.0175e+4, -9.5924e+3 ]
   - name: "ddpg"
     help: "Hyperparameters for DDPG algorithm."
     properties:
-    - name: "actor"
-      help: "Actor network parameters."
-      properties:
-        - name: "layers"
-          default: [128, 64]
-        - name: "init_bound"
-          default: 0.003
-    - name: "critic"
-      help: "Critic network parameters."
-      properties:
-        - name: "layers"
-          default: [64, 128, 32]
-        - name: "init_bound"
-          default: 0.003
-    - name: "trainer"
-      help: "Training parameters."
-      properties:
-        - name: "epochs"
-          default: 100
-        - name: "steps_per_epoch"
-          default: 6000
-        - name: "evaluation_steps"
-          default: 1500
-        - name: "batch_size"
-          default: 256
-        - name: "max_episode_length"
-          default: 300
-        - name: "replay_buffer_size"
-          default: 1000000
-        - name: "discount_factor"
-          default: 0.99
-        - name: "polyak"
-          default: 0.995
-        - name: "actor_lr"
-          default: 0.001
-        - name: "critic_lr"
-          default: 0.001
-        - name: "start_steps"
-          default: 500
-        - name: "action_noise_range"
-          default: 0.01
-        - name: "use_gpu"
-          default: false
-        - name: "reward_scale"
-          default: 1
-        - name: "max_updates_per_episode"
-          default: 10
-        - name: "min_buffer_fill"
-          default: 2000
+      - name: "actor"
+        help: "Actor network parameters."
+        properties:
+          - name: "layers"
+            default: [128, 64]  # Por Default = [128, 64]
+          - name: "init_bound"
+            default: 0.003    #default: 0.003
+      - name: "critic"
+        help: "Critic network parameters."
+        properties:
+          - name: "layers"
+            default: [64, 128, 32]  # Por Default = [64, 128, 32]
+          - name: "init_bound"
+            default: 0.003
+      - name: "trainer"
+        help: "Training parameters."
+        properties:
+          - name: "epochs"
+            default: 100     # Por default = 100
+          - name: "steps_per_epoch"
+            default: 6000   # Por default = 6000
+          - name: "evaluation_steps"
+            default: 157  # Por default = 1500
+          - name: "batch_size"
+            default: 256   # Por default = 256
+          - name: "max_episode_length"
+            default: 300  # Por default = 300
+          - name: "replay_buffer_size"
+            default: 1000000    # Por default = 1000000
+          - name: "discount_factor"
+            default: 0.99   #default:0.99
+          - name: "polyak"
+            default: 0.995  #default: 0.995
+          - name: "actor_lr"
+            default: 0.001  # Por default = 0.001
+          - name: "critic_lr"
+            default: 0.001  # Por default = 0.001
+          - name: "start_steps"
+            default: 500     # Por default = 500
+          - name: "action_noise_range"
+            default: 0.1 #default: 0.01
+          - name: "use_gpu"
+            default: false
+          - name: "reward_scale"
+            default: 1
+          - name: "max_updates_per_episode"
+            default: 10
+          - name: "min_buffer_fill"
+            default: 2000
   - name: "safety_layer"
     help: "Safety layer configuration."
     properties:
@@ -109,26 +226,26 @@ arguments:
         help: "Hyperparameters for constraint model (g)"
         properties:
           - name: "layers"
-            default: [10, 10]
+            default: [2, 2]   #default: [10, 10]
           - name: "init_bound"
-            default: 0.003
+            default: 0.03  #default: 0.003
       - name: "trainer"
         help: "Constraint model training parameters"
         properties:
           - name: "batch_size"
-            default: 256
+            default: 256  #default: 256
           - name: "lr"
-            default: 0.0001
+            default: 0.001 #default:0.0001
           - name: "max_episode_length"
-            default: 300
+            default: 300  #default:300
           - name: "steps_per_epoch"
-            default: 6000
+            default: 6000 #default:6000
           - name: "epochs"
-            default: 25
+            default: 5 #default:25
           - name: "evaluation_steps"
-            default: 1500
+            default: 1500 #default: 1500
           - name: "replay_buffer_size"
-            default: 1000000
+            default: 1000000  #default: 1000000
           - name: "use_gpu"
             default: false
   - name: "main"
@@ -140,6 +257,6 @@ arguments:
           - name: "seed"
             default: 0
           - name: "task"
-            default: "ballnd"
+            default: "battery" #default:ballnd
           - name: "use_safety_layer"
             default: true

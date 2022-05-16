@@ -68,12 +68,12 @@ class DDPG:
         for_each(lambda x: x.cuda(), self._models.values())
 
     def _get_action(self, observation, c, is_training=True):
-        # Action + random gaussian noise (as recommended in spining up)
+        # Action + random gaussian noise (as recommended in spinning up)
         action = self._actor(self._as_tensor(self._flatten_dict(observation)))
         if is_training:
             action += self._config.action_noise_range * torch.randn(self._env.action_space.shape)
 
-        action = action.data.numpy()
+        action = action.data.numpy()        # Convert tensor to ndarray
 
         if self._action_modifier:
             action = self._action_modifier(observation, action, c)
@@ -147,7 +147,7 @@ class DDPG:
                     .flat_map(lambda x: [(x[0], y) for y in x[1].named_parameters()]) # (model_name, (param_name, param_data))
                     .map(lambda x: (f"{x[0]}_{x[1][0]}", x[1][1]))
                     .for_each(lambda x: self._writer.add_histogram(x[0], x[1].data.numpy(), self._train_global_step)))
-        self._train_global_step +=1
+        self._train_global_step += 1
 
     def _update(self, episode_length):
         # Update model #episode_length times
@@ -158,6 +158,10 @@ class DDPG:
         episode_rewards = []
         episode_lengths = []
         episode_actions = []
+        self.temp = []
+        self.soc = []
+        self.volt = []
+        self.curr = []
 
         observation = self._env.reset()
         c = self._env.get_constraint_values()
@@ -174,7 +178,19 @@ class DDPG:
             c = self._env.get_constraint_values()
             episode_reward += reward
             episode_length += 1
-            
+
+            current = 50 * (action - 1.)
+            print(f"Eval: T={40*observation['agent_position'] + 5.}, SOC={observation['agent_soc']}, I={current}, action={action}, reward={reward}")
+            """
+            if current > 1:
+                print(f"Eval: T={40*observation['agent_position'] + 5.}, SOC={observation['agent_soc']}, I={current}, action={action}, reward={reward}")
+            """
+            self.temp.append(40*observation['agent_position'] + 5.)
+            self.volt.append(observation['agent_voltage'])
+            self.soc.append(observation['agent_soc'])
+            self.curr.append(current)
+
+
             if done or (episode_length == self._config.max_episode_length):
                 episode_rewards.append(episode_reward)
                 episode_lengths.append(episode_length)
@@ -222,10 +238,15 @@ class DDPG:
             # Randomly sample episode_ for some initial steps
             action = self._env.action_space.sample() if step < self._config.start_steps \
                      else self._get_action(observation, c)
-            
+
             observation_next, reward, done, _ = self._env.step(action)
             episode_reward += reward
             episode_length += 1
+
+            current = 50 * (action - 1.)
+            if current > 1. and step > self._config.start_steps:
+                print(f"Train: T={40*observation_next['agent_position'] + 5.}, SOC={observation_next['agent_soc']}, I={current}, action={action}, reward={reward}")
+
 
             self._replay_buffer.add({
                 "observation": self._flatten_dict(observation),
@@ -251,7 +272,7 @@ class DDPG:
                 self._writer.add_scalar("episode reward", episode_reward)
 
             # Check if the epoch is over
-            if step != 0 and step % self._config.steps_per_epoch == 0: 
+            if step != 0 and step % self._config.steps_per_epoch == 0:
                 print(f"Finished epoch {step / self._config.steps_per_epoch}. Running validation ...")
                 self.evaluate()
                 print("----------------------------------------------------------")

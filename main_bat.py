@@ -2,6 +2,7 @@ from functional import seq
 import numpy as np
 import torch
 
+
 from safe_explorer.core.config import Config
 from safe_explorer.env.ballnd import BallND
 from safe_explorer.env.spaceship import Spaceship
@@ -40,9 +41,9 @@ class Trainer:
         Config.get().pprint()
         print("============================================================")
 
-        env = Battery()
+        env = BallND() if self._config.task == "ballnd" else Battery()
 
-        SAVE = False            # Almacenamiento de los pesos
+        SAVE = True            # Almacenamiento de los pesos
         LOAD = False            # Carga de los pesos vs Entrenamiento
 
         if self._config.use_safety_layer:
@@ -66,6 +67,7 @@ class Trainer:
         actor = Actor(observation_dim, env.action_space.shape[0])
         critic = Critic(observation_dim, env.action_space.shape[0])
 
+
         safe_action_func = safety_layer.get_safe_action if safety_layer else None
         ddpg = DDPG(env, actor, critic, safe_action_func)
 
@@ -81,6 +83,17 @@ class Trainer:
             torch.save(ddpg._critic.state_dict(), 'model/critic_weights.pth')
 
         ddpg.evaluate()
+
+
+        if LOAD:
+
+            np.savetxt("curves/T6.csv", ddpg.temp, delimiter=", ", fmt='% s')
+            np.savetxt("curves/V6.csv", ddpg.volt, delimiter=", ", fmt='% s')
+            np.savetxt("curves/I6.csv", ddpg.curr, delimiter=", ", fmt='% s')
+            np.savetxt("curves/SOC6.csv", ddpg.soc, delimiter=", ", fmt='% s')
+
+
+
 
 
 if __name__ == '__main__':

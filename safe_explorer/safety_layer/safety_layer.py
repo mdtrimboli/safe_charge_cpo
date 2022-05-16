@@ -14,25 +14,25 @@ from safe_explorer.utils.list import for_each
 
 class SafetyLayer:
     def __init__(self, env):
-        self._env = env
+        self._env = env                                                             # Environment
 
-        self._config = Config.get().safety_layer.trainer
+        self._config = Config.get().safety_layer.trainer                            # Config constants
 
-        self._num_constraints = env.get_num_constraints()
+        self._num_constraints = env.get_num_constraints()                           # Quantity of constraints
 
         self._initialize_constraint_models()
 
-        self._replay_buffer = ReplayBuffer(self._config.replay_buffer_size)
+        self._replay_buffer = ReplayBuffer(self._config.replay_buffer_size)        # ReplayBuffer(Buffer size)
 
         # Tensorboard writer
         self._writer = TensorBoard.get_writer()
         self._train_global_step = 0
         self._eval_global_step = 0
 
-        if self._config.use_gpu:
+        if self._config.use_gpu:                                                    # Default: False
             self._cuda()
 
-    def _as_tensor(self, ndarray, requires_grad=False):
+    def _as_tensor(self, ndarray, requires_grad=False):                             # Transform ndarray to tensor
         tensor = torch.Tensor(ndarray)
         tensor.requires_grad = requires_grad
         return tensor
@@ -57,12 +57,15 @@ class SafetyLayer:
 
         observation = self._env.reset()
 
-        for step in range(num_steps):            
+        for step in range(num_steps):
             action = self._env.action_space.sample()
             c = self._env.get_constraint_values()
             observation_next, _, done, _ = self._env.step(action)
+
+            #print(f"action={current}, soc={observation_next['agent_soc']}, Tm={Tm}")
             c_next = self._env.get_constraint_values()
 
+            # Set D
             self._replay_buffer.add({
                 "action": action,
                 "observation": observation["agent_position"],
@@ -80,22 +83,23 @@ class SafetyLayer:
     def _evaluate_batch(self, batch):
         observation = self._as_tensor(batch["observation"])
         action = self._as_tensor(batch["action"])
-        c = self._as_tensor(batch["c"])
+        c = self._as_tensor(batch["c"])                 # Actual constraint values
         c_next = self._as_tensor(batch["c_next"])
         
         gs = [x(observation) for x in self._models]
 
+        # Linearization
         c_next_predicted = [c[:, i] + \
                             torch.bmm(x.view(x.shape[0], 1, -1), action.view(action.shape[0], -1, 1)).view(-1) \
-                            for i, x in enumerate(gs)]
-        losses = [torch.mean((c_next[:, i] - c_next_predicted[i]) ** 2) for i in range(self._num_constraints)]
+                            for i, x in enumerate(gs)]      # Eq 1
+        losses = [torch.mean((c_next[:, i] - c_next_predicted[i]) ** 2) for i in range(self._num_constraints)]  # Eq 2
         
         return losses
 
     def _update_batch(self, batch):
         batch = self._replay_buffer.sample(self._config.batch_size)
 
-        # Update critic
+        # Update critic    # Section 6
         for_each(lambda x: x.zero_grad(), self._optimizers)
         losses = self._evaluate_batch(batch)
         for_each(lambda x: x.backward(), losses)
@@ -130,15 +134,20 @@ class SafetyLayer:
         g = [x(self._as_tensor(observation["agent_position"]).view(1, -1)) for x in self._models]
         self._train_mode()
 
-        # Fidn the lagrange multipliers
         g = [x.data.numpy().reshape(-1) for x in g]
+
+        # Find the lagrange multipliers: Eq. 5
         multipliers = [(np.dot(g_i, action) + c_i) / np.dot(g_i, g_i) for g_i, c_i in zip(g, c)]
         multipliers = [np.clip(x, 0, np.inf) for x in multipliers]
 
-        # Calculate correction
-        correction = np.max(multipliers) * g[np.argmax(multipliers)]
-
+        # Calculate correction: Eq. 6
+        correction = np.max(multipliers) * g[np.argmax(multipliers)]        # correction = a*
         action_new = action - correction
+        """
+        if action_new > 1:
+            print(f"g={g}, c={c}, multipliers={multipliers}")
+            print(f"Action={action}, Correction={correction}")
+        """
 
         return action_new
 
