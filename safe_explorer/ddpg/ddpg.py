@@ -162,6 +162,7 @@ class DDPG:
         self.soc = []
         self.volt = []
         self.curr = []
+        self.soh = []
 
         observation = self._env.reset()
         c = self._env.get_constraint_values()
@@ -174,13 +175,13 @@ class DDPG:
         for step in range(self._config.evaluation_steps):
             action = self._get_action(observation, c, is_training=False)
             episode_action += np.absolute(action)
-            observation, reward, done, _ = self._env.step(action)
+            observation, reward, done, soh = self._env.step(action)
             c = self._env.get_constraint_values()
             episode_reward += reward
             episode_length += 1
 
             current = 50 * (action - 1.)
-            print(f"Eval: T={40*observation['agent_position'] + 5.}, SOC={observation['agent_soc']}, I={current}, action={action}, reward={reward}")
+            print(f"Eval: T={40*observation['agent_position'] + 5.}, SOC={observation['agent_soc']}, I={current}, action={action}, reward={reward}, SOH={soh}")
             """
             if current > 1:
                 print(f"Eval: T={40*observation['agent_position'] + 5.}, SOC={observation['agent_soc']}, I={current}, action={action}, reward={reward}")
@@ -189,6 +190,7 @@ class DDPG:
             self.volt.append(observation['agent_voltage'])
             self.soc.append(observation['agent_soc'])
             self.curr.append(current)
+            self.soh.append(soh)
 
 
             if done or (episode_length == self._config.max_episode_length):
@@ -211,7 +213,7 @@ class DDPG:
 
         self._train_mode()
 
-        print("Validation completed:\n"
+        print(f"Validation completed:\n"
               f"Number of episodes: {len(episode_actions)}\n"
               f"Average episode length: {mean_episode_length}\n"
               f"Average reward: {mean_episode_reward}\n"
@@ -244,9 +246,10 @@ class DDPG:
             episode_length += 1
 
             current = 50 * (action - 1.)
+            """ 
             if current > 1. and step > self._config.start_steps:
                 print(f"Train: T={40*observation_next['agent_position'] + 5.}, SOC={observation_next['agent_soc']}, I={current}, action={action}, reward={reward}")
-
+            """
 
             self._replay_buffer.add({
                 "observation": self._flatten_dict(observation),
@@ -275,7 +278,11 @@ class DDPG:
             if step != 0 and step % self._config.steps_per_epoch == 0:
                 print(f"Finished epoch {step / self._config.steps_per_epoch}. Running validation ...")
                 self.evaluate()
-                print("----------------------------------------------------------")
+                print("===========================================================")
+                print("|")
+                print("|")
+                print("|")
+                print("===========================================================")
         
         self._writer.close()
         print("==========================================================")

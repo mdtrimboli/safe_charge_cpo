@@ -42,9 +42,10 @@ class Trainer:
         print("============================================================")
 
         env = BallND() if self._config.task == "ballnd" else Battery()
+        #safety_layer = None     # Es una prueba sino borrar
 
-        SAVE = True            # Almacenamiento de los pesos
-        LOAD = False            # Carga de los pesos vs Entrenamiento
+        SAVE = False            # Almacenamiento de los pesos
+        LOAD = True            # Carga de los pesos vs Entrenamiento
 
         if self._config.use_safety_layer:
             safety_layer = SafetyLayer(env)
@@ -73,7 +74,7 @@ class Trainer:
 
         if LOAD:
             ddpg._actor.load_state_dict = torch.load('model/actor_weights.pth')
-            ddpg._critic.load_state_dict = torch.load( 'model/critic_weights.pth')
+            ddpg._critic.load_state_dict = torch.load('model/critic_weights.pth')
         else:
             ddpg.train()
 
@@ -84,13 +85,21 @@ class Trainer:
 
         ddpg.evaluate()
 
+        """
+        np.savetxt("curves/T_wSL.csv", ddpg.temp, delimiter=", ", fmt='% s')
+        np.savetxt("curves/V_wSL.csv", ddpg.volt, delimiter=", ", fmt='% s')
+        np.savetxt("curves/I_wSL.csv", ddpg.curr, delimiter=", ", fmt='% s')
+        np.savetxt("curves/SOC_wSL.csv", ddpg.soc, delimiter=", ", fmt='% s')
+        np.savetxt("curves/SOH_wSL.csv", ddpg.soh, delimiter=", ", fmt='% s')
+        """
 
         if LOAD:
 
-            np.savetxt("curves/T6.csv", ddpg.temp, delimiter=", ", fmt='% s')
-            np.savetxt("curves/V6.csv", ddpg.volt, delimiter=", ", fmt='% s')
-            np.savetxt("curves/I6.csv", ddpg.curr, delimiter=", ", fmt='% s')
-            np.savetxt("curves/SOC6.csv", ddpg.soc, delimiter=", ", fmt='% s')
+            np.savetxt("curves/T_SL.csv", ddpg.temp, delimiter=", ", fmt='% s')
+            np.savetxt("curves/V_SL.csv", ddpg.volt, delimiter=", ", fmt='% s')
+            np.savetxt("curves/I_SL.csv", ddpg.curr, delimiter=", ", fmt='% s')
+            np.savetxt("curves/SOC_SL.csv", ddpg.soc, delimiter=", ", fmt='% s')
+            np.savetxt("curves/SOH_SL.csv", ddpg.soh, delimiter=", ", fmt='% s')
 
 
 

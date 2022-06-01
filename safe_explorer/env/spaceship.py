@@ -83,6 +83,9 @@ class Spaceship(gym.Env):
         max_constraint = self._agent_position  + self._config.agent_slack \
                          - np.asarray([self._width, self._config.length])
 
+
+
+
         return np.concatenate([min_constraints, max_constraint])
 
     def step(self, action):

@@ -78,10 +78,12 @@ class Battery(gym.Env):
         # return self.step(np.zeros(self._config.n))[0]
 
     def _get_reward(self):
-        if self.soc <= 1:
-            return self.soc - 1
+        if self._config.enable_reward_shaping and self._is_agent_outside_shaping_boundary():
+            return -5
         else:
-            return -10
+            return self.soc - 1
+        #else:
+            #return -10
 
     def _move_agent(self, current):
         # Old: Assume that frequency of motor is 1 (one action per second)
@@ -140,10 +142,13 @@ class Battery(gym.Env):
             "agent_voltage": self.v_batt*np.ones(self._config.n,  dtype=np.float32)
         }
 
+        soh = self.soh
+
         done = self._is_agent_outside_boundary()
                #or int(self._current_time // 1) > self._config.episode_length
 
-        return observation, reward, done, {}
+        #return observation, reward, done, {}
+        return observation, reward, done, soh
 
     def calculate_params(self, i):
         self.crate = abs(i / self.cbat)     # c-rate
@@ -184,10 +189,10 @@ class Battery(gym.Env):
         self.beta2 = 1 / self.C2
 
     def calculate_soc(self, i):
-        #e = np.random.randn(1) * self._config.pdfstd + self._config.pdfmean
-        #dw = (e * (np.sqrt(self._config.dtao)))  # brownian motion
-        #w_soc = 1e-3 * self.sigma[0] * dw  # variability soc        #default 1e-3
-        w_soc = [0.]
+        e = np.random.randn(1) * self._config.pdfstd + self._config.pdfmean
+        dw = (e * (np.sqrt(self._config.dtao)))  # brownian motion
+        w_soc = 1e-3 * self.sigma[0] * dw  # variability soc        #default 1e-3
+        #w_soc = [0.]
         return self.soc + (-i / self.cbat) * self.dt + w_soc
 
 

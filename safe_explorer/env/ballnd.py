@@ -27,9 +27,11 @@ class BallND(gym.Env):
     
     def _get_reward(self):
         if self._config.enable_reward_shaping and self._is_agent_outside_shaping_boundary():
-            return -1
+            return -1       # Default = -1
         else:
             return np.clip(1 - 10 * LA.norm(self._agent_position - self._target_position) ** 2, 0, 1)
+
+# Default return: np.clip(1 - 10 * LA.norm(self._agent_position - self._target_position) ** 2, 0, 1)
     
     def _reset_target_location(self):
         self._target_position = \
@@ -64,7 +66,7 @@ class BallND(gym.Env):
         # _agent_position > 0 + _agent_slack => -_agent_position + _agent_slack < 0
         min_constraints = self._config.agent_slack - self._agent_position
         # _agent_position < 1 - _agent_slack => _agent_position + agent_slack- 1 < 0
-        max_constraint = self._agent_position  + self._config.agent_slack - 1
+        max_constraint = self._agent_position + self._config.agent_slack - 1
 
         return np.concatenate([min_constraints, max_constraint])
 
