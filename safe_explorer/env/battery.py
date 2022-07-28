@@ -11,7 +11,7 @@ from safe_explorer.core.config import Config
 
 class Battery(gym.Env):
     def __init__(self):
-        self._config = Config.get().env.battery                              # Maxi: Complete config for battery model
+        self._config = Config.get().env.battery
         # Set the properties for spaces
         self.action_space = Box(low=-1, high=1, shape=(self._config.n,), dtype=np.float32)          # Maxi: Current
         self.observation_space = Dict({
@@ -58,8 +58,8 @@ class Battery(gym.Env):
         else:
             self.soc = self._config.init_soc
             self.soh = self._config.init_soh
-            self.Tc = 23
-            self.Ts = 23
+            self.Tc = 23       #default:23
+            self.Ts = 23        #default:23
             self.vc1 = 0
             self.vc2 = 0
             self.ocv = self.calculate_ocv(self.soc)
@@ -87,7 +87,7 @@ class Battery(gym.Env):
 
     def _move_agent(self, current):
         # Old: Assume that frequency of motor is 1 (one action per second)
-        current = np.clip(50.*(current - 1.), -100., 0.)        # default: [0 -46]
+        current = np.clip(23.*(current - 1.), -46., 0.)        # default: [0 -46]
         self.calculate_params(current)          # Tm
         self.soc = self.calculate_soc(current)
         self.soh = self.calculate_soh(current)

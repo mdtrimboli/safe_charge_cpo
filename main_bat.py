@@ -1,6 +1,7 @@
 from functional import seq
 import numpy as np
 import torch
+import copy
 
 
 from safe_explorer.core.config import Config
@@ -42,24 +43,34 @@ class Trainer:
         print("============================================================")
 
         env = BallND() if self._config.task == "ballnd" else Battery()
-        #safety_layer = None     # Es una prueba sino borrar
+
 
         SAVE = False            # Almacenamiento de los pesos
-        LOAD = True            # Carga de los pesos vs Entrenamiento
+        LOAD = True          # Carga de los pesos vs Entrenamiento
+
+        #safety_layer = None #Prueba
 
         if self._config.use_safety_layer:
             safety_layer = SafetyLayer(env)
             # load or train
             if LOAD:
-                safety_layer._models[0].load_state_dict = torch.load('model/safety_1_weights.pth')
-                safety_layer._models[1].load_state_dict = torch.load('model/safety_2_weights.pth')
+                #safety_layer._models[0].load_state_dict = torch.load('model/safety_1_weights.pth')
+                #safety_layer._models[1].load_state_dict = torch.load('model/safety_2_weights.pth')
+
+                safety_layer._models[0].load_state_dict(torch.load('model/safety_1_weights.pth'))
+                safety_layer._models[1].load_state_dict(torch.load('model/safety_2_weights.pth'))
+
             else:
                 safety_layer.train()
 
         if SAVE:
             #safety_layer._models
+            #best_sl_model0 = copy.deepcopy(safety_layer._models[0].state_dict())
+            #best_sl_model1 = copy.deepcopy(safety_layer._models[1].state_dict())
+
             torch.save(safety_layer._models[0].state_dict(), 'model/safety_1_weights.pth')
             torch.save(safety_layer._models[1].state_dict(), 'model/safety_2_weights.pth')
+
         
         observation_dim = (seq(env.observation_space.spaces.values())
                             .map(lambda x: x.shape[0])
@@ -73,8 +84,8 @@ class Trainer:
         ddpg = DDPG(env, actor, critic, safe_action_func)
 
         if LOAD:
-            ddpg._actor.load_state_dict = torch.load('model/actor_weights.pth')
-            ddpg._critic.load_state_dict = torch.load('model/critic_weights.pth')
+            ddpg._actor.load_state_dict(torch.load('model/actor_weights.pth'))
+            ddpg._critic.load_state_dict(torch.load('model/critic_weights.pth'))
         else:
             ddpg.train()
 

@@ -245,11 +245,6 @@ class DDPG:
             episode_reward += reward
             episode_length += 1
 
-            current = 50 * (action - 1.)
-            """ 
-            if current > 1. and step > self._config.start_steps:
-                print(f"Train: T={40*observation_next['agent_position'] + 5.}, SOC={observation_next['agent_soc']}, I={current}, action={action}, reward={reward}")
-            """
 
             self._replay_buffer.add({
                 "observation": self._flatten_dict(observation),
