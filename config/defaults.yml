@@ -58,7 +58,7 @@ arguments:
           - name: "target_margin"
             default: 0.2
           - name: "agent_slack"
-            default: 0.05   #default:0.15 = 2.5°C
+            default: 0.05   #default:0.05
           - name: "episode_length"
             default: 300 #default:30
           - name: "frequency_ratio"
@@ -68,17 +68,17 @@ arguments:
           - name: "target_noise_std"
             default: 0.05
           - name: "enable_reward_shaping"
-            default: false
+            default: true
           - name: "reward_shaping_slack"
-            default: 0.1
+            default: 0.15    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           - name: "init_soc"
             default: 0.3
           - name: "init_soh"
             default: 0.9
           - name: "ito_soc"
-            default: 0.5  #default: 0 para entrenar, 0.5 para evaluar
+            default: 0  #default: 0 para entrenar, 0.5 para evaluar
           - name: "ito_soh"
-            default: 0.5 #default: 0 para entrenar, 0.5 para evaluar
+            default: 0 #default: 0 para entrenar, 0.5 para evaluar
           - name: "ito_temp"
             default: 0    #default: 0 para entrenar   [0 , 2 , 4, 6]
           - name: "frequency"
@@ -93,13 +93,13 @@ arguments:
             default: 3.6
           - name: "Tf"
             help: "Ambient Temperature"
-            default: 23 #default:23
+            default: 25 #default:23
           - name: "Tc"
             help: "Core Temperature"
-            default: 23 #default:23
+            default: 25 #default:23
           - name: "Ts"
             help: "Surface Temperature"
-            default: 23 #default:23
+            default: 25 #default:23
           - name: "Rc"
             help: "Heat Conduction Resistance"
             default: 1.94
@@ -188,11 +188,11 @@ arguments:
         help: "Training parameters."
         properties:
           - name: "epochs"
-            default: 10     # Por default = 100
+            default: 100     # Por default = 100
           - name: "steps_per_epoch"
             default: 6000   # Por default = 6000
           - name: "evaluation_steps"
-            default: 200  # Por default = 1500
+            default: 1500  # Por default = 1500
           - name: "batch_size"
             default: 256   # Por default = 256
           - name: "max_episode_length"
@@ -255,8 +255,8 @@ arguments:
         help: "Training configuration."
         properties:
           - name: "seed"
-            default: 0
+            default: 80 #default:0
           - name: "task"
             default: "battery" #default:ballnd
           - name: "use_safety_layer"
-            default: true #default:true
+            default: false #default:true

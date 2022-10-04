@@ -6,6 +6,75 @@ from numpy import loadtxt
 plt.style.use('ggplot')
 
 
+### COMPARACION DE REWARD
+
+rew_curves_SL = open('curves/Rew_DDPG_SL.csv', 'rb')
+rew_curves_DDPG = open('curves/Rew_DDPG.csv', 'rb')
+rew_curves_RS_01 = open('curves/Rew_DDPG_01.csv', 'rb')
+rew_curves_RS_02 = open('curves/Rew_DDPG_02.csv', 'rb')
+data_SL = loadtxt(rew_curves_SL, delimiter=",")
+data_DDPG = loadtxt(rew_curves_DDPG, delimiter=",")
+data_RS_01 = loadtxt(rew_curves_RS_01, delimiter=",")
+data_RS_02 = loadtxt(rew_curves_RS_02, delimiter=",")
+
+plt.plot(data_SL, label='DDPG+SL')
+plt.plot(data_DDPG, label='Only DDPG')
+plt.plot(data_RS_01, label='DDPG+RS (M=0.1)')
+plt.plot(data_RS_02, label='DDPG+RS (M=0.2)')
+
+plt.legend(loc="lower right")
+plt.xlabel("Episodes of evaluation phase")
+plt.ylabel("Episodic reward")
+plt.savefig('curves/Reward_comp.png', dpi=1200)
+plt.show()
+
+
+### COMPARACION DE LONGITUD
+
+len_curves_SL = open('curves/Len_DDPG_SL.csv', 'rb')
+len_curves_DDPG = open('curves/Len_DDPG.csv', 'rb')
+len_curves_RS_01 = open('curves/Len_DDPG_01.csv', 'rb')
+len_curves_RS_02 = open('curves/Len_DDPG_02.csv', 'rb')
+data_SL = loadtxt(len_curves_SL, delimiter=",")
+data_DDPG = loadtxt(len_curves_DDPG, delimiter=",")
+data_RS_01 = loadtxt(len_curves_RS_01, delimiter=",")
+data_RS_02 = loadtxt(len_curves_RS_02, delimiter=",")
+
+plt.plot(data_SL, label='DDPG+SL')
+plt.plot(data_DDPG, label='Only DDPG')
+plt.plot(data_RS_01, label='DDPG+RS (M=0.1)')
+plt.plot(data_RS_02, label='DDPG+RS (M=0.2)')
+
+plt.legend(loc="upper right")
+plt.xlabel("Episodes of evaluation phase")
+plt.ylabel("Episode length")
+plt.savefig('curves/Length_comp.png', dpi=1200)
+plt.show()
+
+### COMPARACION DE VR
+
+vr_curves_SL = open('curves/AVConst_DDPG_SL.csv', 'rb')
+vr_curves_DDPG = open('curves/AVConst_DDPG.csv', 'rb')
+vr_curves_RS_01 = open('curves/AVConst_DDPG_01.csv', 'rb')
+vr_curves_RS_02 = open('curves/AVConst_DDPG_02.csv', 'rb')
+data_SL = loadtxt(vr_curves_SL, delimiter=",")
+data_DDPG = loadtxt(vr_curves_DDPG, delimiter=",")
+data_RS_01 = loadtxt(vr_curves_RS_01, delimiter=",")
+data_RS_02 = loadtxt(vr_curves_RS_02, delimiter=",")
+
+plt.plot(data_SL, label='DDPG+SL')
+plt.plot(data_DDPG, label='Only DDPG')
+plt.plot(data_RS_01, label='DDPG+RS (M=0.1)')
+plt.plot(data_RS_02, label='DDPG+RS (M=0.2)')
+
+plt.legend(loc="lower right")
+plt.xlabel("Episodes of evaluation phase")
+plt.ylabel("Cumulative constraint violations")
+plt.savefig('curves/AVC_comp.png', dpi=1200)
+plt.show()
+
+### COMPARACIÓN DE ITO
+"""
 t_curves = open('curves/T_SL.csv', 'rb')
 t_curves2 = open('curves/T2_SL.csv', 'rb')
 t_curves4 = open('curves/T4_SL.csv', 'rb')
@@ -25,8 +94,10 @@ plt.xlabel("Evaluation steps")
 plt.ylabel("Temperature [°C]")
 plt.savefig('curves/Ito_var.png', dpi=1200)
 plt.show()
+"""
 
 
+### PERFILES
 """
 t_curves_i = open('curves/T_SL.csv', 'rb')
 v_curves = open('curves/V_SL.csv', 'rb')

@@ -23,6 +23,11 @@ class DDPG:
         self._critic = critic
         self._action_modifier = action_modifier
 
+        self.count = 0
+        self.episodic_reward_buffer = []
+        self.episodic_length_buffer = []
+        self.accum_constraint_violations = []
+
         self._config = Config.get().ddpg.trainer
 
         self._initialize_target_networks()
@@ -155,8 +160,8 @@ class DDPG:
                  range(min(episode_length, self._config.max_updates_per_episode)))
 
     def evaluate(self):
-        episode_rewards = []
-        episode_lengths = []
+        self.episode_rewards = []
+        self.episode_lengths = []
         episode_actions = []
         self.temp = []
         self.soc = []
@@ -180,22 +185,30 @@ class DDPG:
             episode_reward += reward
             episode_length += 1
 
-            current = 50 * (action - 1.)
-            print(f"Eval: T={40*observation['agent_position'] + 5.}, SOC={observation['agent_soc']}, I={current}, action={action}, reward={reward}, SOH={soh}")
-            """
-            if current > 1:
-                print(f"Eval: T={40*observation['agent_position'] + 5.}, SOC={observation['agent_soc']}, I={current}, action={action}, reward={reward}")
+            #current = 23 * (action - 1.)
+            #print(f"Eval: T={40*observation['agent_position'] + 5.}, SOC={observation['agent_soc']}, I={current}, action={action}, reward={reward}, SOH={soh}")
+
+
+            # PARA VER EL PERFIL DE CARGA, DESTILDAR COMENTARIOS
             """
             self.temp.append(40*observation['agent_position'] + 5.)
             self.volt.append(observation['agent_voltage'])
             self.soc.append(observation['agent_soc'])
             self.curr.append(current)
             self.soh.append(soh)
+            """
+            if c[0] > 0 or c[1] > 0:
+                #print(f"Temperatura={observation['agent_position']}")
+                self.count = self.count + 1
 
 
             if done or (episode_length == self._config.max_episode_length):
-                episode_rewards.append(episode_reward)
-                episode_lengths.append(episode_length)
+
+                self.episodic_reward_buffer.append(episode_reward)
+                self.accum_constraint_violations.append(self.count)
+                self.episodic_length_buffer.append(episode_length)
+                self.episode_rewards.append(episode_reward)
+                self.episode_lengths.append(episode_length)
                 episode_actions.append(episode_action / episode_length)
 
                 observation = self._env.reset()
@@ -204,8 +217,8 @@ class DDPG:
                 episode_length = 0
                 episode_action = 0
 
-        mean_episode_reward = np.mean(episode_rewards)
-        mean_episode_length = np.mean(episode_lengths)
+        mean_episode_reward = np.mean(self.episode_rewards)
+        mean_episode_length = np.mean(self.episode_lengths)
 
         self._writer.add_scalar("eval mean episode reward", mean_episode_reward, self._eval_global_step)
         self._writer.add_scalar("eval mean episode length", mean_episode_length, self._eval_global_step)
@@ -217,7 +230,8 @@ class DDPG:
               f"Number of episodes: {len(episode_actions)}\n"
               f"Average episode length: {mean_episode_length}\n"
               f"Average reward: {mean_episode_reward}\n"
-              f"Average action magnitude: {np.mean(episode_actions)}")
+              f"Average action magnitude: {np.mean(episode_actions)}\n"
+              f"Constraint Violations: {self.count}\n")
 
     def train(self):
         

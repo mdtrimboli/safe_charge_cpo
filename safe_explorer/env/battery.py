@@ -30,6 +30,8 @@ class Battery(gym.Env):
         self.vc2 = self._config.vc2
         self.dt = self._config.frequency_ratio
 
+        self.count = 0
+
         self.Tc = self._config.Tc
         self.Ts = self._config.Ts
 
@@ -50,16 +52,16 @@ class Battery(gym.Env):
         if self._config.random_start:
             self.soc = np.random.random()
             self.soh = np.random.random()
-            self.Tc = 23
-            self.Ts = 23
+            self.Tc = self._config.Tc
+            self.Ts = self._config.Ts
             self.vc1 = 0
             self.vc2 = 0
             self.ocv = self.calculate_ocv(self.soc)
         else:
             self.soc = self._config.init_soc
             self.soh = self._config.init_soh
-            self.Tc = 23       #default:23
-            self.Ts = 23        #default:23
+            self.Tc = self._config.Tc       #default:23
+            self.Ts = self._config.Ts        #default:23
             self.vc1 = 0
             self.vc2 = 0
             self.ocv = self.calculate_ocv(self.soc)
@@ -79,11 +81,9 @@ class Battery(gym.Env):
 
     def _get_reward(self):
         if self._config.enable_reward_shaping and self._is_agent_outside_shaping_boundary():
-            return -5
+            return -1.
         else:
             return self.soc - 1
-        #else:
-            #return -10
 
     def _move_agent(self, current):
         # Old: Assume that frequency of motor is 1 (one action per second)
@@ -95,7 +95,7 @@ class Battery(gym.Env):
         self.v_batt = self.ocv - current * self.R0 - self.compute_vc1(current) - self.compute_vc2(current)
 
     def _is_agent_outside_boundary(self):
-        return np.any(self.soc < 0) or np.any(self.soc > 1)
+        return np.any(self.soc < 0) or np.any(self.soc > 1) or np.any(self._agent_position > 1)
 
     def _is_agent_outside_shaping_boundary(self):
         return np.any(self._agent_position < self._config.reward_shaping_slack) \
@@ -157,7 +157,6 @@ class Battery(gym.Env):
         self.Atol = (20 / (self.M * np.exp(-self.Ea /(self._config.R*(self.Tc + 273.15)))))**(1/self._config.z)  # total discharged Ah
         self.N = 3600 * self.Atol / self.cbat       # number of cycles
         self.Tm = np.array([(self.Ts + self.Tc) / 2.]).flatten()  # average temperature
-        #self._agent_position = self.Tm
         self._agent_position = (self.Tm - 5.) / (45. - 5.)
 
 
@@ -200,7 +199,7 @@ class Battery(gym.Env):
 
         e = np.random.randn(1) * self._config.pdfstd + self._config.pdfmean
         dw = (e * (np.sqrt(self._config.dtao)))  # brownian motion
-        w_tc = 1e-1 * self._config.ito_temp * dw  # variability soc        #default 1e-3
+        w_tc = 1e-1 * self._config.ito_temp * dw  # variability soc        #default 1e-3 [ito(delta Tc)]
         #w_tc = [0.]
 
         self.Tc = self.Tc + ((self.Ts - self.Tc) / (self._config.Rc * self._config.Cc) + i *
