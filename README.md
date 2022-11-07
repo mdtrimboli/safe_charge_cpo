@@ -23,7 +23,7 @@ pip install -r requirements.txt
 To obtain list of parameters and their default values run,
 
 ```sh
-python -m safe_explorer.main --help
+python -m safe_charge.main --help
 ```
 
 Train the model by simply running,
@@ -31,13 +31,13 @@ Train the model by simply running,
 ### BallND
 
 ```sh
-python -m safe_explorer.main --main_trainer_task ballnd
+python -m safe_charge.main --main_trainer_task ballnd
 ```
 
 ### Spaceship
 
 ```sh
-python -m safe_explorer.main --main_trainer_task spaceship
+python -m safe_charge.main --main_trainer_task spaceship
 ```
 
 Monitor training with Tensorboard,

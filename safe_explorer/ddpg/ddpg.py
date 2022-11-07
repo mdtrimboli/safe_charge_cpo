@@ -1,6 +1,7 @@
 import copy
 from datetime import datetime
 from functional import seq
+import os
 import numpy as np
 import time
 import torch
@@ -24,14 +25,15 @@ class DDPG:
         self._action_modifier = action_modifier
 
         self.count = 0
+        self.count_tem = 0
         self.episodic_reward_buffer = []
         self.episodic_length_buffer = []
         self.accum_constraint_violations = []
+        self.accum_limit_violations = []
 
         self._config = Config.get().ddpg.trainer
 
         self._initialize_target_networks()
-        self._initialize_optimizers()
 
         self._models = {
             'actor': self._actor,
@@ -42,17 +44,26 @@ class DDPG:
 
         self._replay_buffer = ReplayBuffer(self._config.replay_buffer_size)
 
-        # Tensorboard writer
-        self._writer = TensorBoard.get_writer()
-        self._train_global_step = 0
-        self._eval_global_step = 0
-
         if self._config.use_gpu:
             self._cuda()
+
+        self._initialize_optimizers()
+
+        # Tensorboard writer
+        # self._writer = TensorBoard.get_writer()
+        #self._train_global_step = 0
+        #self._eval_global_step = 0
+
+
 
     def _as_tensor(self, ndarray, requires_grad=False):
         tensor = torch.Tensor(ndarray)
         tensor.requires_grad = requires_grad
+
+        if self._config.use_gpu:
+            self._cuda()
+            tensor = tensor.cuda()
+
         return tensor
 
     def _initialize_target_networks(self):
@@ -76,12 +87,14 @@ class DDPG:
         # Action + random gaussian noise (as recommended in spinning up)
         action = self._actor(self._as_tensor(self._flatten_dict(observation)))
         if is_training:
-            action += self._config.action_noise_range * torch.randn(self._env.action_space.shape)
+            action += self._config.action_noise_range * torch.randn(self._env.action_space.shape).cuda()
 
-        action = action.data.numpy()        # Convert tensor to ndarray
+        action = action.cpu().data.numpy()        # Convert tensor to ndarray
 
         if self._action_modifier:
             action = self._action_modifier(observation, action, c)
+
+
 
         return action
 
@@ -145,14 +158,16 @@ class DDPG:
         self._update_targets(self._target_actor, self._actor)
         self._update_targets(self._target_critic, self._critic)
 
+        """
         # Log to tensorboard
         self._writer.add_scalar("critic loss", critic_loss.item(), self._train_global_step)
         self._writer.add_scalar("actor loss", actor_loss.item(), self._train_global_step)
         (seq(self._models.items())
                     .flat_map(lambda x: [(x[0], y) for y in x[1].named_parameters()]) # (model_name, (param_name, param_data))
                     .map(lambda x: (f"{x[0]}_{x[1][0]}", x[1][1]))
-                    .for_each(lambda x: self._writer.add_histogram(x[0], x[1].data.numpy(), self._train_global_step)))
-        self._train_global_step += 1
+                    .for_each(lambda x: self._writer.add_histogram(x[0], x[1].cpu().data.numpy(), self._train_global_step)))
+        """
+        #self._train_global_step += 1
 
     def _update(self, episode_length):
         # Update model #episode_length times
@@ -185,27 +200,29 @@ class DDPG:
             episode_reward += reward
             episode_length += 1
 
-            #current = 23 * (action - 1.)
+            current = 23 * (action - 1.)
             #print(f"Eval: T={40*observation['agent_position'] + 5.}, SOC={observation['agent_soc']}, I={current}, action={action}, reward={reward}, SOH={soh}")
 
 
             # PARA VER EL PERFIL DE CARGA, DESTILDAR COMENTARIOS
-            """
+
             self.temp.append(40*observation['agent_position'] + 5.)
             self.volt.append(observation['agent_voltage'])
             self.soc.append(observation['agent_soc'])
             self.curr.append(current)
             self.soh.append(soh)
-            """
+
             if c[0] > 0 or c[1] > 0:
-                #print(f"Temperatura={observation['agent_position']}")
                 self.count = self.count + 1
+                if observation['agent_position'] > 1:
+                    self.count_tem = self.count_tem + 1
 
 
             if done or (episode_length == self._config.max_episode_length):
 
                 self.episodic_reward_buffer.append(episode_reward)
                 self.accum_constraint_violations.append(self.count)
+                self.accum_limit_violations.append(self.count_tem)
                 self.episodic_length_buffer.append(episode_length)
                 self.episode_rewards.append(episode_reward)
                 self.episode_lengths.append(episode_length)
@@ -220,9 +237,9 @@ class DDPG:
         mean_episode_reward = np.mean(self.episode_rewards)
         mean_episode_length = np.mean(self.episode_lengths)
 
-        self._writer.add_scalar("eval mean episode reward", mean_episode_reward, self._eval_global_step)
-        self._writer.add_scalar("eval mean episode length", mean_episode_length, self._eval_global_step)
-        self._eval_global_step += 1
+        #self._writer.add_scalar("eval mean episode reward", mean_episode_reward, self._eval_global_step)
+        #self._writer.add_scalar("eval mean episode length", mean_episode_length, self._eval_global_step)
+        #self._eval_global_step += 1
 
         self._train_mode()
 
@@ -231,7 +248,8 @@ class DDPG:
               f"Average episode length: {mean_episode_length}\n"
               f"Average reward: {mean_episode_reward}\n"
               f"Average action magnitude: {np.mean(episode_actions)}\n"
-              f"Constraint Violations: {self.count}\n")
+              f"Constraint Violations: {self.count}\n"
+              f"Limit Violation: {self.count_tem}\n")
 
     def train(self):
         
@@ -271,6 +289,11 @@ class DDPG:
             observation = observation_next
             c = self._env.get_constraint_values()
 
+            if c[0] > 0 or c[1] > 0:
+                self.count = self.count + 1
+                if observation['agent_position'] > 1:
+                    self.count_tem = self.count_tem + 1
+
             # Make all updates at the end of the episode
             if done or (episode_length == self._config.max_episode_length):
                 if step >= self._config.min_buffer_fill:
@@ -280,8 +303,8 @@ class DDPG:
                 c = self._env.get_constraint_values()
                 episode_reward = 0
                 episode_length = 0
-                self._writer.add_scalar("episode length", episode_length)
-                self._writer.add_scalar("episode reward", episode_reward)
+                # self._writer.add_scalar("episode length", episode_length)
+                # self._writer.add_scalar("episode reward", episode_reward)
 
             # Check if the epoch is over
             if step != 0 and step % self._config.steps_per_epoch == 0:
@@ -293,7 +316,7 @@ class DDPG:
                 print("|")
                 print("===========================================================")
         
-        self._writer.close()
+        # self._writer.close()
         print("==========================================================")
         print(f"Finished DDPG training. Time spent: {(time.time() - start_time) // 1} secs")
         print("==========================================================")

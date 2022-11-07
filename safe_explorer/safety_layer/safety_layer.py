@@ -120,10 +120,11 @@ class SafetyLayer:
 
         self._replay_buffer.clear()
         # Log to tensorboard
+        """
         for_each(lambda x: self._writer.add_scalar(f"constraint {x[0]} eval loss", x[1], self._eval_global_step),
                  enumerate(losses))
         self._eval_global_step += 1
-
+        """
         self._train_mode()
 
         print(f"Validation completed, average loss {losses}")
@@ -174,26 +175,29 @@ class SafetyLayer:
 
             self._replay_buffer.clear()
 
+            """
             # Write losses and histograms to tensorboard
             for_each(lambda x: self._writer.add_scalar(f"constraint {x[0]} training loss", x[1], self._train_global_step),
                      enumerate(losses))
-
+            
             (seq(self._models)
                     .zip_with_index() # (model, index) 
                     .map(lambda x: (f"constraint_model_{x[1]}", x[0])) # (model_name, model)
                     .flat_map(lambda x: [(x[0], y) for y in x[1].named_parameters()]) # (model_name, (param_name, param_data))
                     .map(lambda x: (f"{x[0]}_{x[1][0]}", x[1][1])) # (modified_param_name, param_data)
                     .for_each(lambda x: self._writer.add_histogram(x[0], x[1].data.numpy(), self._train_global_step)))
-
+    
 
 
             self._train_global_step += 1
+            """
+
 
             print(f"Finished epoch {epoch} with losses: {losses}. Running validation ...")
             self.evaluate()
             print("----------------------------------------------------------")
         
-        self._writer.close()
+        #self._writer.close()
         print("==========================================================")
         print(f"Finished training constraint model. Time spent: {(time.time() - start_time) // 1} secs")
         print("==========================================================")

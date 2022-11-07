@@ -39,7 +39,7 @@ class Battery(gym.Env):
         ## Load maps
         print(os.getcwd())
         dir_current = os.getcwd()
-        #mat = spio.loadmat(dir_current + '/safe_explorer/env/battery_mappings.mat', squeeze_me=True)
+        #mat = spio.loadmat(dir_current + '/safe_charge/env/battery_mappings.mat', squeeze_me=True)
         mat = spio.loadmat(dir_current + '\\safe_explorer\\env\\battery_mappings.mat', squeeze_me=True)
         self.ocv_map = np.array(mat['ocv_curve'])
         self.soc_map = np.linspace(0, 1, len(self.ocv_map))
@@ -95,7 +95,8 @@ class Battery(gym.Env):
         self.v_batt = self.ocv - current * self.R0 - self.compute_vc1(current) - self.compute_vc2(current)
 
     def _is_agent_outside_boundary(self):
-        return np.any(self.soc < 0) or np.any(self.soc > 1) or np.any(self._agent_position > 1)
+        return np.any(self.soc < 0) or np.any(self.soc > 1) or np.any(self._agent_position > 1)    #Para entrenamiento
+        #return np.any(self.soc < 0) or np.any(self.soc > 1) #Para evaluación
 
     def _is_agent_outside_shaping_boundary(self):
         return np.any(self._agent_position < self._config.reward_shaping_slack) \

@@ -70,7 +70,7 @@ arguments:
           - name: "enable_reward_shaping"
             default: true
           - name: "reward_shaping_slack"
-            default: 0.15    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            default: 0.12   # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           - name: "init_soc"
             default: 0.3
           - name: "init_soh"
@@ -80,7 +80,7 @@ arguments:
           - name: "ito_soh"
             default: 0 #default: 0 para entrenar, 0.5 para evaluar
           - name: "ito_temp"
-            default: 0    #default: 0 para entrenar   [0 , 2 , 4, 6]
+            default: 1   #Valores posibles [0 , 2 , 4, 6]
           - name: "frequency"
             default: 1
           - name: "random_start"
@@ -208,11 +208,11 @@ arguments:
           - name: "critic_lr"
             default: 0.001  # Por default = 0.001
           - name: "start_steps"
-            default: 500     # Por default = 500
+            default: 0     # Por default = 500
           - name: "action_noise_range"
-            default: 0.3 #default: 0.01
+            default: 0.3 #default: 0.01 (0.3)
           - name: "use_gpu"
-            default: false
+            default: true
           - name: "reward_scale"
             default: 1
           - name: "max_updates_per_episode"
@@ -241,13 +241,13 @@ arguments:
           - name: "steps_per_epoch"
             default: 6000 #default:6000
           - name: "epochs"
-            default: 5 #default:5
+            default: 3 #default:5
           - name: "evaluation_steps"
             default: 1500 #default: 1500
           - name: "replay_buffer_size"
-            default: 1000000  #default: 1000000
+            default: 10000000  #default: 1000000
           - name: "use_gpu"
-            default: false
+            default: true
   - name: "main"
     help: "Safe-Explorer driver properties."
     properties:
@@ -255,7 +255,7 @@ arguments:
         help: "Training configuration."
         properties:
           - name: "seed"
-            default: 80 #default:0
+            default: 5 #default:0
           - name: "task"
             default: "battery" #default:ballnd
           - name: "use_safety_layer"

@@ -41,8 +41,9 @@ class Trainer:
         print("============================================================")
 
         env = Battery()
+        safety_layer = None
 
-        SAVE = False            # Almacenamiento de los pesos
+        SAVE = True            # Almacenamiento de los pesos
         LOAD = False            # Carga de los pesos vs Entrenamiento
 
         if self._config.use_safety_layer:
@@ -54,10 +55,10 @@ class Trainer:
             else:
                 safety_layer.train()
 
-        if SAVE:
-            #safety_layer._models
-            torch.save(safety_layer._models[0].state_dict(), 'model/safety_1_weights.pth')
-            torch.save(safety_layer._models[1].state_dict(), 'model/safety_2_weights.pth')
+            if SAVE:
+                #safety_layer._models
+                torch.save(safety_layer._models[0].state_dict(), 'model/safety_1_weights.pth')
+                torch.save(safety_layer._models[1].state_dict(), 'model/safety_2_weights.pth')
         
         observation_dim = (seq(env.observation_space.spaces.values())
                             .map(lambda x: x.shape[0])
@@ -71,7 +72,7 @@ class Trainer:
 
         if LOAD:
             ddpg._actor.load_state_dict = torch.load('model/actor_weights.pth')
-            ddpg._critic.load_state_dict = torch.load( 'model/critic_weights.pth')
+            ddpg._critic.load_state_dict = torch.load('model/critic_weights.pth')
         else:
             ddpg.train()
 
