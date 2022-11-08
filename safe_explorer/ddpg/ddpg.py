@@ -94,8 +94,6 @@ class DDPG:
         if self._action_modifier:
             action = self._action_modifier(observation, action, c)
 
-
-
         return action
 
     def _get_q(self, batch):

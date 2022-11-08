@@ -3,23 +3,27 @@ import numpy as np
 from numpy import loadtxt
 
 
-plt.style.use('ggplot')
+plt.style.use('seaborn-v0_8-darkgrid')
 
 """
 ### COMPARACION DE REWARD
 
 rew_curves_SL = open('curves/Rew_DDPG_SL.csv', 'rb')
 rew_curves_DDPG = open('curves/Rew_DDPG_01.csv', 'rb')
-rew_curves_RS = open('curves/Rew_DDPG_RS.csv', 'rb')
+rew_curves_RS5 = open('curves/Rew_DDPG_RS5.csv', 'rb')
+rew_curves_RS12 = open('curves/Rew_DDPG_RS12.csv', 'rb')
 
 data_SL = loadtxt(rew_curves_SL, delimiter=",")
 data_DDPG = loadtxt(rew_curves_DDPG, delimiter=",")
-data_RS = loadtxt(rew_curves_RS, delimiter=",")
+data_RS5 = loadtxt(rew_curves_RS5, delimiter=",")
+data_RS12 = loadtxt(rew_curves_RS12, delimiter=",")
 
 
-plt.plot(data_SL, label='DDPG+SL')
+
 plt.plot(data_DDPG, label='Only DDPG')
-plt.plot(data_RS, label='DDPG+RS (M=0.15)')
+plt.plot(data_RS5, label='DDPG+RS (M=0.05)')
+plt.plot(data_RS12, label='DDPG+RS (M=0.12)')
+plt.plot(data_SL, label='DDPG+SL')
 
 
 plt.legend(loc="lower right")
@@ -27,20 +31,24 @@ plt.xlabel("Episodes of evaluation phase")
 plt.ylabel("Episodic reward")
 plt.savefig('curves/Reward_comp.png', dpi=1200)
 plt.show()
+"""
 
-
+"""
 ### COMPARACION DE LONGITUD
 
 len_curves_SL = open('curves/Len_DDPG_SL.csv', 'rb')
 len_curves_DDPG = open('curves/Len_DDPG_01.csv', 'rb')
-len_curves_RS = open('curves/Len_DDPG_RS.csv', 'rb')
+len_curves_RS5 = open('curves/Len_DDPG_RS5.csv', 'rb')
+len_curves_RS12 = open('curves/Len_DDPG_RS12.csv', 'rb')
 data_SL = loadtxt(len_curves_SL, delimiter=",")
 data_DDPG = loadtxt(len_curves_DDPG, delimiter=",")
-data_RS_01 = loadtxt(len_curves_RS, delimiter=",")
+data_RS_05 = loadtxt(len_curves_RS5, delimiter=",")
+data_RS_12 = loadtxt(len_curves_RS12, delimiter=",")
 
 plt.plot(data_SL, label='DDPG+SL')
 plt.plot(data_DDPG, label='Only DDPG')
-plt.plot(data_RS_01, label='DDPG+RS (M=0.5)')
+plt.plot(data_RS_05, label='DDPG+RS (M=0.05)')
+plt.plot(data_RS_12, label='DDPG+RS (M=0.12)')
 
 
 plt.legend(loc="upper right")
@@ -48,28 +56,32 @@ plt.xlabel("Episodes of evaluation phase")
 plt.ylabel("Episode length")
 plt.savefig('curves/Length_comp.png', dpi=1200)
 plt.show()
+"""
 
-### COMPARACION DE VR
+"""
+### COMPARACION DE VL
 
 vr_curves_SL = open('curves/AVConst_DDPG_SL.csv', 'rb')
 vr_curves_DDPG = open('curves/AVConst_DDPG_01.csv', 'rb')
-vr_curves_RS = open('curves/AVConst_DDPG_RS.csv', 'rb')
+vr_curves_RS5 = open('curves/ACVConst_DDPG_RS5.csv', 'rb')
+vr_curves_RS12 = open('curves/ACVConst_DDPG_RS12.csv', 'rb')
 data_SL = loadtxt(vr_curves_SL, delimiter=",")
 data_DDPG = loadtxt(vr_curves_DDPG, delimiter=",")
-data_RS = loadtxt(vr_curves_RS, delimiter=",")
+data_RS5 = loadtxt(vr_curves_RS5, delimiter=",")
+data_RS12 = loadtxt(vr_curves_RS12, delimiter=",")
 
 plt.plot(data_SL, label='DDPG+SL')
 plt.plot(data_DDPG, label='Only DDPG')
-plt.plot(data_RS, label='DDPG+RS (M=0.15)')
-
+plt.plot(data_RS5, label='DDPG+RS (M=0.05)')
+plt.plot(data_RS12, label='DDPG+RS (M=0.12)')
 
 plt.legend(loc="lower right")
 plt.xlabel("Episodes of evaluation phase")
 plt.ylabel("Cumulative constraint violations")
 plt.savefig('curves/AVC_comp.png', dpi=1200)
 plt.show()
-
 """
+
 
 ### COMPARACIÓN DE ITO
 """
@@ -98,30 +110,29 @@ plt.show()
 """
 ### PERFILES
 
-t_curves_i = open('curves/T_DDPG_SL.csv', 'rb')
-v_curves = open('curves/V_DDPG_SL.csv', 'rb')
-i_curves = open('curves/I_DDPG_SL.csv', 'rb')
-soc_curves = open('curves/SOC_DDPG_SL.csv', 'rb')
-soh_curves = open('curves/SOH_DDPG_SL.csv', 'rb')
-#soh_wsl_curves = open('curves/SOH_wSL.csv', 'rb')
+t_curves_i = open('curves/T_DDPG_RS5.csv', 'rb')
+v_curves = open('curves/V_DDPG_RS5.csv', 'rb')
+i_curves = open('curves/I_DDPG_RS5.csv', 'rb')
+soc_curves = open('curves/SOC_DDPG_RS5.csv', 'rb')
+
 
 data_T2_i = loadtxt(t_curves_i, delimiter=",")
 data_V2 = loadtxt(v_curves, delimiter=",")
 data_I2 = loadtxt(i_curves, delimiter=",")
 data_SOC2 = loadtxt(soc_curves, delimiter=",")
-data_SOH = loadtxt(soh_curves, delimiter=",")
-#data_SOH_wsl = loadtxt(soh_wsl_curves, delimiter=",")
+
+sample = 192
 
 fig = plt.figure(figsize=(10, 5))
 ax1 = fig.add_subplot(221)
 ax2 = fig.add_subplot(222)
 ax3 = fig.add_subplot(223)
 ax4 = fig.add_subplot(224)
-ax1.plot(data_T2_i[:161])
-ax1.plot(45*np.ones(175),  '--', label='Temperature Limit')
-ax2.plot(data_V2[:161])
-ax3.plot(data_SOC2[:161])
-ax4.plot(data_I2[:161])
+ax1.plot(data_T2_i[:sample])
+ax1.plot(45*np.ones(sample),  '--', label='Temperature Limit')
+ax2.plot(data_V2[:sample])
+ax3.plot(data_SOC2[:sample])
+ax4.plot(data_I2[:sample])
 #fig.suptitle("Curves for Ito = 0", fontsize=14)
 ax1.set_ylabel('Temperature')
 ax2.set_ylabel('Voltage')
@@ -129,15 +140,31 @@ ax3.set_ylabel('SOC')
 ax4.set_ylabel('Current')
 ##############################################
 #IMPORTANTE!!!
-plt.savefig('curves/EvalCurves_28Oct.png', dpi=1200)
+plt.savefig('curves/EvalCurves_08Nov_DDPG.png', dpi=1200)
 plt.show()
 ##############################################
 """
-"""
+
 fig2 = plt.figure(figsize=(10, 5))
-plt.plot(data_SOH, label='with SL')
-plt.plot(data_SOH_wsl[:126], label='without SL')
+
+soh_SL = open('curves/SOH_DDPG_SL.csv', 'rb')
+soh_DDPG = open('curves/SOH_DDPG_01.csv', 'rb')
+soh_RS5 = open('curves/SOH_DDPG_RS5.csv', 'rb')
+soh_RS12 = open('curves/SOH_DDPG_RS12.csv', 'rb')
+
+SOH_SL = loadtxt(soh_SL, delimiter=",")
+SOH_DDPG = loadtxt(soh_DDPG, delimiter=",")
+SOH_RS5 = loadtxt(soh_RS5, delimiter=",")
+SOH_RS12 = loadtxt(soh_RS12, delimiter=",")
+
+plt.plot(SOH_SL[:173], label='with SL')
+plt.plot(SOH_DDPG[:125], label='only DDPG')
+plt.plot(SOH_RS5[:192], label='with RS (M=0.05)')
+plt.plot(SOH_RS12[:196], label='with RS (M=0.12)')
+
+#plt.xlim([0, 200])
+#plt.ylim([0.8, 0.9])
 plt.legend(loc="lower left")
-plt.savefig('curves/SOH_compare1.png', dpi=1200)
+plt.savefig('curves/SOH_compare.png', dpi=1200)
 plt.show()
-"""
+

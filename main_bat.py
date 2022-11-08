@@ -46,7 +46,7 @@ class Trainer:
 
         env = BallND() if self._config.task == "ballnd" else Battery()
 
-        switch = True
+        switch = False
 
 
         SAVE = switch               # Almacenamiento de los pesos
@@ -101,18 +101,19 @@ class Trainer:
         ddpg.evaluate()
 
         """
-        np.savetxt("curves/Rew_DDPG_RS.csv", ddpg.episodic_reward_buffer, delimiter=", ", fmt='% s')
-        np.savetxt("curves/Len_DDPG_RS.csv", ddpg.episodic_length_buffer, delimiter=", ", fmt='% s')
-        np.savetxt("curves/AVConst_DDPG_RS.csv", ddpg.accum_constraint_violations, delimiter=", ", fmt='% s')
+        np.savetxt("curves/Rew_DDPG_RS12.csv", ddpg.episodic_reward_buffer, delimiter=", ", fmt='% s')
+        np.savetxt("curves/Len_DDPG_RS12.csv", ddpg.episodic_length_buffer, delimiter=", ", fmt='% s')
+        np.savetxt("curves/ACVConst_DDPG_RS12.csv", ddpg.accum_constraint_violations, delimiter=", ", fmt='% s')
+        np.savetxt("curves/ALVConst_DDPG_RS12.csv", ddpg.accum_limit_violations, delimiter=", ", fmt='% s')
         """
 
 
         if LOAD:
-            np.savetxt("curves/T_DDPG_RS.csv", ddpg.temp, delimiter=", ", fmt='% s')
-            np.savetxt("curves/V_DDPG_RS.csv", ddpg.volt, delimiter=", ", fmt='% s')
-            np.savetxt("curves/I_DDPG_RS.csv", ddpg.curr, delimiter=", ", fmt='% s')
-            np.savetxt("curves/SOC_DDPG_RS.csv", ddpg.soc, delimiter=", ", fmt='% s')
-            np.savetxt("curves/SOH_DDPG_RS.csv", ddpg.soh, delimiter=", ", fmt='% s')
+            np.savetxt("curves/T_DDPG_01.csv", ddpg.temp, delimiter=", ", fmt='% s')
+            np.savetxt("curves/V_DDPG_01.csv", ddpg.volt, delimiter=", ", fmt='% s')
+            np.savetxt("curves/I_DDPG_01.csv", ddpg.curr, delimiter=", ", fmt='% s')
+            np.savetxt("curves/SOC_DDPG_01.csv", ddpg.soc, delimiter=", ", fmt='% s')
+            np.savetxt("curves/SOH_DDPG_01.csv", ddpg.soh, delimiter=", ", fmt='% s')
 
 
 

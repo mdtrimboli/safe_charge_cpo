@@ -95,8 +95,8 @@ class Battery(gym.Env):
         self.v_batt = self.ocv - current * self.R0 - self.compute_vc1(current) - self.compute_vc2(current)
 
     def _is_agent_outside_boundary(self):
-        return np.any(self.soc < 0) or np.any(self.soc > 1) or np.any(self._agent_position > 1)    #Para entrenamiento
-        #return np.any(self.soc < 0) or np.any(self.soc > 1) #Para evaluación
+        #return np.any(self.soc < 0) or np.any(self.soc > 1) or np.any(self._agent_position > 1)    #Para entrenamiento
+        return np.any(self.soc < 0) or np.any(self.soc > 1) #Para evaluación
 
     def _is_agent_outside_shaping_boundary(self):
         return np.any(self._agent_position < self._config.reward_shaping_slack) \

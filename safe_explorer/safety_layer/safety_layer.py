@@ -35,6 +35,11 @@ class SafetyLayer:
     def _as_tensor(self, ndarray, requires_grad=False):                             # Transform ndarray to tensor
         tensor = torch.Tensor(ndarray)
         tensor.requires_grad = requires_grad
+
+        if self._config.use_gpu:
+            self._cuda()
+            tensor = tensor.cuda()
+
         return tensor
 
     def _cuda(self):
@@ -135,7 +140,7 @@ class SafetyLayer:
         g = [x(self._as_tensor(observation["agent_position"]).view(1, -1)) for x in self._models]
         self._train_mode()
 
-        g = [x.data.numpy().reshape(-1) for x in g]
+        g = [x.data.cpu().numpy().reshape(-1) for x in g]
 
         # Find the lagrange multipliers: Eq. 5
         multipliers = [(np.dot(g_i, action) + c_i) / np.dot(g_i, g_i) for g_i, c_i in zip(g, c)]
