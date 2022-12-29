@@ -122,8 +122,10 @@ data_I2 = loadtxt(i_curves, delimiter=",")
 data_SOC2 = loadtxt(soc_curves, delimiter=",")
 
 sample = 192
+#RS5=192, RS12=196, DDPG=125, SL=173
 
-fig = plt.figure(figsize=(10, 5))
+fig = plt.figure(figsize=(8, 6))
+fig.subplots_adjust(hspace=0.4)
 ax1 = fig.add_subplot(221)
 ax2 = fig.add_subplot(222)
 ax3 = fig.add_subplot(223)
@@ -133,19 +135,38 @@ ax1.plot(45*np.ones(sample),  '--', label='Temperature Limit')
 ax2.plot(data_V2[:sample])
 ax3.plot(data_SOC2[:sample])
 ax4.plot(data_I2[:sample])
+
+ax1.set_ylim(24, 55)
+ax2.set_ylim(3.6, 4.6)
+ax3.set_ylim(0.2, 1.1)
+ax4.set_ylim(-50, 0)
+
+
+
+
 #fig.suptitle("Curves for Ito = 0", fontsize=14)
 ax1.set_ylabel('Temperature')
 ax2.set_ylabel('Voltage')
 ax3.set_ylabel('SOC')
 ax4.set_ylabel('Current')
+
+ax1.set_xlabel('Steps')
+ax2.set_xlabel('Steps')
+ax3.set_xlabel('Steps')
+ax4.set_xlabel('Steps')
+
+ax1.set_title('(a)')
+ax2.set_title('(b)')
+ax3.set_title('(c)')
+ax4.set_title('(d)')
 ##############################################
 #IMPORTANTE!!!
-plt.savefig('curves/EvalCurves_08Nov_DDPG.png', dpi=1200)
+plt.savefig('curves/EvalCurves_08Nov_RS5.png', dpi=600)
 plt.show()
 ##############################################
 """
 
-fig2 = plt.figure(figsize=(10, 5))
+fig2 = plt.figure(figsize=(8, 6))
 
 soh_SL = open('curves/SOH_DDPG_SL.csv', 'rb')
 soh_DDPG = open('curves/SOH_DDPG_01.csv', 'rb')
@@ -162,9 +183,15 @@ plt.plot(SOH_DDPG[:125], label='only DDPG')
 plt.plot(SOH_RS5[:192], label='with RS (M=0.05)')
 plt.plot(SOH_RS12[:196], label='with RS (M=0.12)')
 
+plt.ylabel('SOH')
+plt.xlabel('Steps')
+
 #plt.xlim([0, 200])
 #plt.ylim([0.8, 0.9])
+
+
+
 plt.legend(loc="lower left")
-plt.savefig('curves/SOH_compare.png', dpi=1200)
+plt.savefig('curves/SOH_compare.png', dpi=600)
 plt.show()
 

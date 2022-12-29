@@ -25,7 +25,7 @@ for box in b['boxes']:
     box.set(color = 'black' )
 
 
-plt.xticks([1, 2, 3, 4], ["0.03", "0.07", "0.12", "0.15"], rotation=10)
+plt.xticks([1, 2, 3, 4], ["0.05", "0.09", "0.12", "0.15"], rotation=10)
 plt.xlabel("Reward Shaping Margin (M)")
 plt.ylabel("Accumulated Constraint Violations")
 plt.savefig('curves/DDPG+RS.png', dpi=1200)
