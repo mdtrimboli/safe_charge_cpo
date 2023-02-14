@@ -58,9 +58,9 @@ arguments:
           - name: "target_margin"
             default: 0.2
           - name: "agent_slack"
-            default: 0.05   #default:0.05
+            default: 0.05  #default:0.05
           - name: "episode_length"
-            default: 300 #default:30
+            default: 200 #default:30
           - name: "frequency_ratio"
             default: 1. #default:0.1
           - name: "respawn_interval"
@@ -68,9 +68,9 @@ arguments:
           - name: "target_noise_std"
             default: 0.05
           - name: "enable_reward_shaping"
-            default: false
+            default: true
           - name: "reward_shaping_slack"
-            default: 0.12   # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            default: 0. # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 0 para DDPG
           - name: "init_soc"
             default: 0.3
           - name: "init_soh"
@@ -80,7 +80,7 @@ arguments:
           - name: "ito_soh"
             default: 0 #default: 0 para entrenar, 0.5 para evaluar
           - name: "ito_temp"
-            default: 1   #Valores posibles [0 , 2 , 4, 6]
+            default: 1 #Valores posibles [0 , 2 , 4, 6]
           - name: "frequency"
             default: 1
           - name: "random_start"
@@ -188,7 +188,7 @@ arguments:
         help: "Training parameters."
         properties:
           - name: "epochs"
-            default: 100     # Por default = 100
+            default: 175     # Por default = 100
           - name: "steps_per_epoch"
             default: 6000   # Por default = 6000
           - name: "evaluation_steps"
@@ -206,11 +206,11 @@ arguments:
           - name: "actor_lr"
             default: 0.001  # Por default = 0.001
           - name: "critic_lr"
-            default: 0.001  # Por default = 0.001
+            default: 0.001 # Por default = 0.001
           - name: "start_steps"
-            default: 0     # Por default = 500
+            default: 50     # Por default = 500
           - name: "action_noise_range"
-            default: 0.3 #default: 0.01 (0.3)
+            default: 0.01 #default: 0.01 (0.3)
           - name: "use_gpu"
             default: true
           - name: "reward_scale"
@@ -218,7 +218,7 @@ arguments:
           - name: "max_updates_per_episode"
             default: 10
           - name: "min_buffer_fill"
-            default: 2000
+            default: 2000   #default:2000
   - name: "safety_layer"
     help: "Safety layer configuration."
     properties:
@@ -259,4 +259,4 @@ arguments:
           - name: "task"
             default: "battery" #default:ballnd
           - name: "use_safety_layer"
-            default: false #default:true
+            default: true #default:true

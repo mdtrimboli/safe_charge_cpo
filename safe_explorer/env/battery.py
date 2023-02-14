@@ -68,7 +68,7 @@ class Battery(gym.Env):
 
         self.done = False
         self._current_time = 0.
-        self._move_agent(1.)        # Default (0.) ... no deberia ser 1?
+        self._move_agent(0.)        # Default (0.) ... no deberia ser 1?
 
         observation = {
             "agent_position": self._agent_position,
@@ -83,7 +83,7 @@ class Battery(gym.Env):
         if self._config.enable_reward_shaping and self._is_agent_outside_shaping_boundary():
             return -1.
         else:
-            return self.soc - 1
+            return self.soc
 
     def _move_agent(self, current):
         # Old: Assume that frequency of motor is 1 (one action per second)

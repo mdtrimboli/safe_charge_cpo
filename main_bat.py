@@ -21,9 +21,9 @@ class Trainer:
 
     def _set_seeds(self):
         # Desactivar en caso de total aleatoriedad
-        a = 0
-        #torch.manual_seed(self._config.seed)        # Para clase torch
-        #np.random.seed(self._config.seed)           # Para clase ndarray
+        #a = 0
+        torch.manual_seed(self._config.seed)
+        np.random.seed(self._config.seed)
 
     def _print_ascii_art(self):
         print(
@@ -46,8 +46,8 @@ class Trainer:
 
         env = BallND() if self._config.task == "ballnd" else Battery()
 
-        switch = False
 
+        switch = False
 
         SAVE = switch               # Almacenamiento de los pesos
         LOAD = not(switch)          # Carga de los pesos vs Entrenamiento
@@ -58,9 +58,6 @@ class Trainer:
             safety_layer = SafetyLayer(env)
             # load or train
             if LOAD:
-                #safety_layer._models[0].load_state_dict = torch.load('model/safety_1_weights.pth')
-                #safety_layer._models[1].load_state_dict = torch.load('model/safety_2_weights.pth')
-
                 safety_layer._models[0].load_state_dict(torch.load('model/safety_1_weights.pth'))
                 safety_layer._models[1].load_state_dict(torch.load('model/safety_2_weights.pth'))
 
@@ -68,21 +65,15 @@ class Trainer:
                 safety_layer.train()
 
             if SAVE:
-                #safety_layer._models
-                #best_sl_model0 = copy.deepcopy(safety_layer._models[0].state_dict())
-                #best_sl_model1 = copy.deepcopy(safety_layer._models[1].state_dict())
-
                 torch.save(safety_layer._models[0].state_dict(), 'model/safety_1_weights.pth')
                 torch.save(safety_layer._models[1].state_dict(), 'model/safety_2_weights.pth')
 
-        
         observation_dim = (seq(env.observation_space.spaces.values())
                             .map(lambda x: x.shape[0])
                             .sum())
 
         actor = Actor(observation_dim, env.action_space.shape[0])
         critic = Critic(observation_dim, env.action_space.shape[0])
-
 
         safe_action_func = safety_layer.get_safe_action if safety_layer else None
         ddpg = DDPG(env, actor, critic, safe_action_func)
@@ -100,22 +91,18 @@ class Trainer:
 
         ddpg.evaluate()
 
-        """
-        np.savetxt("curves/Rew_DDPG_RS12.csv", ddpg.episodic_reward_buffer, delimiter=", ", fmt='% s')
-        np.savetxt("curves/Len_DDPG_RS12.csv", ddpg.episodic_length_buffer, delimiter=", ", fmt='% s')
-        np.savetxt("curves/ACVConst_DDPG_RS12.csv", ddpg.accum_constraint_violations, delimiter=", ", fmt='% s')
-        np.savetxt("curves/ALVConst_DDPG_RS12.csv", ddpg.accum_limit_violations, delimiter=", ", fmt='% s')
-        """
-
+        if SAVE:
+            np.savetxt("curves/Rew_DDPG_SL.csv", ddpg.episodic_reward_buffer, delimiter=", ", fmt='% s')
+            #np.savetxt("curves/Len_DDPG_SL.csv", ddpg.episodic_length_buffer, delimiter=", ", fmt='% s')
+            np.savetxt("curves/ALVConst_Train_DDPG_SL.csv", ddpg.accum_lv_train, delimiter=", ", fmt='% s')
+            np.savetxt("curves/ALVConst_Eval_DDPG_SL.csv", ddpg.accum_lv_eval, delimiter=", ", fmt='% s')
 
         if LOAD:
-            np.savetxt("curves/T_DDPG_01.csv", ddpg.temp, delimiter=", ", fmt='% s')
-            np.savetxt("curves/V_DDPG_01.csv", ddpg.volt, delimiter=", ", fmt='% s')
-            np.savetxt("curves/I_DDPG_01.csv", ddpg.curr, delimiter=", ", fmt='% s')
-            np.savetxt("curves/SOC_DDPG_01.csv", ddpg.soc, delimiter=", ", fmt='% s')
-            np.savetxt("curves/SOH_DDPG_01.csv", ddpg.soh, delimiter=", ", fmt='% s')
-
-
+            #np.savetxt("curves/T_DDPG_04_f.csv", ddpg.temp, delimiter=", ", fmt='% s')
+            #np.savetxt("curves/V_DDPG_04_f.csv", ddpg.volt, delimiter=", ", fmt='% s')
+            #np.savetxt("curves/I_DDPG_04_f.csv", ddpg.curr, delimiter=", ", fmt='% s')
+            #np.savetxt("curves/SOC_DDPG_04_f.csv", ddpg.soc, delimiter=", ", fmt='% s')
+            np.savetxt("curves/SOH_DDPG_SL.csv", ddpg.soh, delimiter=", ", fmt='% s')
 
 
 
