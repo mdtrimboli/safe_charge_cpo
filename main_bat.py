@@ -21,9 +21,9 @@ class Trainer:
 
     def _set_seeds(self):
         # Desactivar en caso de total aleatoriedad
-        #a = 0
-        torch.manual_seed(self._config.seed)
-        np.random.seed(self._config.seed)
+        a = 0
+        #torch.manual_seed(self._config.seed)
+        #np.random.seed(self._config.seed)
 
     def _print_ascii_art(self):
         print(
@@ -44,10 +44,14 @@ class Trainer:
         Config.get().pprint()
         print("============================================================")
 
+
+        reset_soh = 0.9
+        np.save("curves/final_soh.npy", reset_soh)
+
         env = BallND() if self._config.task == "ballnd" else Battery()
 
 
-        switch = False
+        switch = True
 
         SAVE = switch               # Almacenamiento de los pesos
         LOAD = not(switch)          # Carga de los pesos vs Entrenamiento
@@ -92,17 +96,18 @@ class Trainer:
         ddpg.evaluate()
 
         if SAVE:
-            np.savetxt("curves/Rew_DDPG_SL.csv", ddpg.episodic_reward_buffer, delimiter=", ", fmt='% s')
-            #np.savetxt("curves/Len_DDPG_SL.csv", ddpg.episodic_length_buffer, delimiter=", ", fmt='% s')
-            np.savetxt("curves/ALVConst_Train_DDPG_SL.csv", ddpg.accum_lv_train, delimiter=", ", fmt='% s')
-            np.savetxt("curves/ALVConst_Eval_DDPG_SL.csv", ddpg.accum_lv_eval, delimiter=", ", fmt='% s')
+            np.savetxt("curves/Rew_DDPG_RS5.csv", ddpg.episodic_reward_buffer, delimiter=", ", fmt='% s')
+            np.savetxt("curves/Len_DDPG_RS5.csv", ddpg.episodic_length_buffer, delimiter=", ", fmt='% s')
+            np.savetxt("curves/SOH_DDPG_RS5.csv", ddpg.soh, delimiter=", ", fmt='% s')
+            np.savetxt("curves/ALVConst_Train_DDPG_RS5.csv", ddpg.accum_lv_train, delimiter=", ", fmt='% s')
+            #np.savetxt("curves/ALVConst_Eval_DDPG_SL.csv", ddpg.accum_lv_eval, delimiter=", ", fmt='% s')
 
         if LOAD:
-            #np.savetxt("curves/T_DDPG_04_f.csv", ddpg.temp, delimiter=", ", fmt='% s')
-            #np.savetxt("curves/V_DDPG_04_f.csv", ddpg.volt, delimiter=", ", fmt='% s')
-            #np.savetxt("curves/I_DDPG_04_f.csv", ddpg.curr, delimiter=", ", fmt='% s')
-            #np.savetxt("curves/SOC_DDPG_04_f.csv", ddpg.soc, delimiter=", ", fmt='% s')
-            np.savetxt("curves/SOH_DDPG_SL.csv", ddpg.soh, delimiter=", ", fmt='% s')
+            np.savetxt("curves/T_DDPG_04_f.csv", ddpg.temp, delimiter=", ", fmt='% s')
+            np.savetxt("curves/V_DDPG_04_f.csv", ddpg.volt, delimiter=", ", fmt='% s')
+            np.savetxt("curves/I_DDPG_04_f.csv", ddpg.curr, delimiter=", ", fmt='% s')
+            np.savetxt("curves/SOC_DDPG_04_f.csv", ddpg.soc, delimiter=", ", fmt='% s')
+
 
 
 

@@ -7,6 +7,7 @@ import time
 import torch
 import torch.nn.functional as F
 from torch.optim import Adam
+from torch.optim import Adamax
 
 from safe_explorer.core.config import Config
 from safe_explorer.core.replay_buffer import ReplayBuffer
@@ -27,11 +28,13 @@ class DDPG:
         self.count = 0
         self.count_tem_train = 0
         self.count_tem_eval = 0
+        self.total_episode = 0
         self.episodic_reward_buffer = []
         self.episodic_length_buffer = []
         self.accum_constraint_violations = []
         self.accum_lv_eval = []
         self.accum_lv_train = []
+        self.soh = []
 
         self._config = Config.get().ddpg.trainer
 
@@ -167,7 +170,6 @@ class DDPG:
         self.soc = []
         self.volt = []
         self.curr = []
-        self.soh = []
 
         observation = self._env.reset()
         c = self._env.get_constraint_values()
@@ -190,18 +192,10 @@ class DDPG:
             self.volt.append(observation['agent_voltage'])
             self.soc.append(observation['agent_soc'])
             self.curr.append(current)
-            self.soh.append(soh)
-
-            if c[0] > 0 or c[1] > 0:
-                self.count = self.count + 1
-                if observation['agent_position'] > 1:
-                    self.count_tem_eval = self.count_tem_eval + 1
 
             if done or (episode_length == self._config.max_episode_length):
 
                 self.episodic_reward_buffer.append(episode_reward)
-                self.accum_constraint_violations.append(self.count)
-                self.accum_lv_eval.append(self.count_tem_eval)
                 self.episodic_length_buffer.append(episode_length)
                 self.episode_rewards.append(episode_reward)
                 self.episode_lengths.append(episode_length)
@@ -219,16 +213,16 @@ class DDPG:
         self._train_mode()
 
         print(f"Validation completed:\n"
-              f"Number of episodes: {len(episode_actions)}\n"
+              #f"Number of episodes: {len(episode_actions)}\n"
               f"Average episode length: {mean_episode_length}\n"
               f"Average reward: {mean_episode_reward}\n"
-              f"Average action magnitude: {np.mean(episode_actions)}\n"
-              f"Constraint Violations: {self.count}\n"
-              f"Limit Violation at Training: {self.count_tem_train}\n"
-              f"Limit Violation at Evaluation: {self.count_tem_eval}\n")
+              f"Average action magnitude: {np.mean(episode_actions)}\n")
+              #f"Constraint Violations: {self.count}\n"
+              #f"Limit Violation at Training: {self.count_tem_train}\n"
+              #f"Limit Violation at Evaluation: {self.count_tem_eval}\n")
 
     def train(self):
-        
+        self.soh = []
         start_time = time.time()
 
         print("==========================================================")
@@ -249,10 +243,11 @@ class DDPG:
             action = self._env.action_space.sample() if step < self._config.start_steps \
                      else self._get_action(observation, c)
 
-            observation_next, reward, done, _ = self._env.step(action)
+            observation_next, reward, done, soh = self._env.step(action)
             episode_reward += reward
             episode_length += 1
 
+            self.soh.append(soh)
 
             self._replay_buffer.add({
                 "observation": self._flatten_dict(observation),
@@ -265,14 +260,14 @@ class DDPG:
             observation = observation_next
             c = self._env.get_constraint_values()
 
-            if c[0] > 0 or c[1] > 0:
-                self.count = self.count + 1
-                if observation['agent_position'] > 1:
-                    self.count_tem_train = self.count_tem_train + 1
-
             # Make all updates at the end of the episode
             if done or (episode_length == self._config.max_episode_length):
+                self.total_episode += 1
+                if observation['agent_position'] > 1:
+                    self.count_tem_train = self.count_tem_train + 1
+                np.savetxt("curves/final_soh.csv", soh, delimiter=", ", fmt='% s')
                 self.accum_lv_train.append(self.count_tem_train)
+
                 if step >= self._config.min_buffer_fill:
                     self._update(episode_length)
                 # Reset episode
@@ -283,7 +278,12 @@ class DDPG:
 
             # Check if the epoch is over
             if step != 0 and step % self._config.steps_per_epoch == 0:
-                print(f"Finished epoch {step / self._config.steps_per_epoch}. Running validation ...")
+                print(f"Finished epoch {step / self._config.steps_per_epoch}.")
+                print(f"Number of Episodes: {self.total_episode}")
+                print(f"Constraint Violation during training: {self.count_tem_train}")
+                print(f"Percentage of episodes in which restriction violation occurred: {100*(self.count_tem_train/self.total_episode)}")
+                print("------------------------------------------------------------")
+                print("Running validation...")
                 self.evaluate()
                 print("===========================================================")
                 print("|")
@@ -293,4 +293,7 @@ class DDPG:
 
         print("==========================================================")
         print(f"Finished DDPG training. Time spent: {(time.time() - start_time) // 1} secs")
+        print(f"Number of Episodes: {self.total_episode}")
+        print(f"Constraint Violation during training: {self.count_tem_train}")
+        print(f"Percentage of episodes in which restriction violation occurred: {100 * (self.count_tem_train / self.total_episode)}")
         print("==========================================================")

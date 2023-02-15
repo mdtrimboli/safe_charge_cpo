@@ -60,7 +60,7 @@ arguments:
           - name: "agent_slack"
             default: 0.05  #default:0.05
           - name: "episode_length"
-            default: 200 #default:30
+            default: 300 #default:30
           - name: "frequency_ratio"
             default: 1. #default:0.1
           - name: "respawn_interval"
@@ -188,11 +188,11 @@ arguments:
         help: "Training parameters."
         properties:
           - name: "epochs"
-            default: 175     # Por default = 100
+            default: 100     # Por default = 100
           - name: "steps_per_epoch"
             default: 6000   # Por default = 6000
           - name: "evaluation_steps"
-            default: 1500  # Por default = 1500
+            default: 2500  # Por default = 1500
           - name: "batch_size"
             default: 256   # Por default = 256
           - name: "max_episode_length"
@@ -204,11 +204,11 @@ arguments:
           - name: "polyak"
             default: 0.995  #default: 0.995
           - name: "actor_lr"
-            default: 0.001  # Por default = 0.001
+            default: 0.00001  # Por default = 0.001
           - name: "critic_lr"
-            default: 0.001 # Por default = 0.001
+            default: 0.0001 # Por default = 0.001
           - name: "start_steps"
-            default: 50     # Por default = 500
+            default: 0     # Por default = 500
           - name: "action_noise_range"
             default: 0.01 #default: 0.01 (0.3)
           - name: "use_gpu"
@@ -216,7 +216,7 @@ arguments:
           - name: "reward_scale"
             default: 1
           - name: "max_updates_per_episode"
-            default: 10
+            default: 10     #default: 10
           - name: "min_buffer_fill"
             default: 2000   #default:2000
   - name: "safety_layer"
@@ -259,4 +259,4 @@ arguments:
           - name: "task"
             default: "battery" #default:ballnd
           - name: "use_safety_layer"
-            default: true #default:true
+            default: false #default:true

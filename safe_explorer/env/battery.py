@@ -59,7 +59,7 @@ class Battery(gym.Env):
             self.ocv = self.calculate_ocv(self.soc)
         else:
             self.soc = self._config.init_soc
-            self.soh = self._config.init_soh
+            self.soh = np.load('curves/final_soh.npy')  # self._config.init_soh
             self.Tc = self._config.Tc       #default:23
             self.Ts = self._config.Ts        #default:23
             self.vc1 = 0
@@ -81,9 +81,9 @@ class Battery(gym.Env):
 
     def _get_reward(self):
         if self._config.enable_reward_shaping and self._is_agent_outside_shaping_boundary():
-            return -1.
+            return -75.
         else:
-            return self.soc
+            return self.soc - 1
 
     def _move_agent(self, current):
         # Old: Assume that frequency of motor is 1 (one action per second)
@@ -95,8 +95,8 @@ class Battery(gym.Env):
         self.v_batt = self.ocv - current * self.R0 - self.compute_vc1(current) - self.compute_vc2(current)
 
     def _is_agent_outside_boundary(self):
-        #return np.any(self.soc < 0) or np.any(self.soc > 1) or np.any(self._agent_position > 1)    #Para entrenamiento
-        return np.any(self.soc < 0) or np.any(self.soc > 1) #Para evaluación
+        return np.any(self.soc < 0) or np.any(self.soc > 1) or np.any(self._agent_position > 1)    #Para entrenamiento
+        #return np.any(self.soc < 0) or np.any(self.soc > 1) #Para evaluación
 
     def _is_agent_outside_shaping_boundary(self):
         return np.any(self._agent_position < self._config.reward_shaping_slack) \
