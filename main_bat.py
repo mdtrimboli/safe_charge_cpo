@@ -96,10 +96,10 @@ class Trainer:
         ddpg.evaluate()
 
         if SAVE:
-            np.savetxt("curves/Rew_DDPG_RS5.csv", ddpg.episodic_reward_buffer, delimiter=", ", fmt='% s')
-            np.savetxt("curves/Len_DDPG_RS5.csv", ddpg.episodic_length_buffer, delimiter=", ", fmt='% s')
-            np.savetxt("curves/SOH_DDPG_RS5.csv", ddpg.soh, delimiter=", ", fmt='% s')
-            np.savetxt("curves/ALVConst_Train_DDPG_RS5.csv", ddpg.accum_lv_train, delimiter=", ", fmt='% s')
+            np.savetxt("curves/Rew_DDPG_SL.csv", ddpg.episodic_reward_buffer, delimiter=", ", fmt='% s')
+            np.savetxt("curves/Len_DDPG_SL.csv", ddpg.episodic_length_buffer, delimiter=", ", fmt='% s')
+            np.savetxt("curves/SOH_DDPG_SL.csv", ddpg.soh, delimiter=", ", fmt='% s')
+            np.savetxt("curves/ALVConst_Train_DDPG_SL.csv", ddpg.accum_lv_train, delimiter=", ", fmt='% s')
             #np.savetxt("curves/ALVConst_Eval_DDPG_SL.csv", ddpg.accum_lv_eval, delimiter=", ", fmt='% s')
 
         if LOAD:

@@ -208,7 +208,7 @@ arguments:
           - name: "critic_lr"
             default: 0.0001 # Por default = 0.001
           - name: "start_steps"
-            default: 0     # Por default = 500
+            default: 500     # Por default = 500
           - name: "action_noise_range"
             default: 0.01 #default: 0.01 (0.3)
           - name: "use_gpu"
@@ -241,7 +241,7 @@ arguments:
           - name: "steps_per_epoch"
             default: 6000 #default:6000
           - name: "epochs"
-            default: 3 #default:5
+            default: 5 #default:5
           - name: "evaluation_steps"
             default: 1500 #default: 1500
           - name: "replay_buffer_size"
@@ -259,4 +259,4 @@ arguments:
           - name: "task"
             default: "battery" #default:ballnd
           - name: "use_safety_layer"
-            default: false #default:true
+            default: true #default:true

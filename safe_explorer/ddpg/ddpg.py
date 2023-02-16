@@ -223,6 +223,7 @@ class DDPG:
 
     def train(self):
         self.soh = []
+        self.flag_rv = False
         start_time = time.time()
 
         print("==========================================================")
@@ -260,12 +261,16 @@ class DDPG:
             observation = observation_next
             c = self._env.get_constraint_values()
 
+            if observation['agent_position'] > 1:
+                self.flag_rv = True
+
             # Make all updates at the end of the episode
             if done or (episode_length == self._config.max_episode_length):
                 self.total_episode += 1
-                if observation['agent_position'] > 1:
+                if self.flag_rv:
                     self.count_tem_train = self.count_tem_train + 1
-                np.savetxt("curves/final_soh.csv", soh, delimiter=", ", fmt='% s')
+                    self.flag_rv = False
+                np.save("curves/final_soh.npy", soh)
                 self.accum_lv_train.append(self.count_tem_train)
 
                 if step >= self._config.min_buffer_fill:
@@ -282,6 +287,7 @@ class DDPG:
                 print(f"Number of Episodes: {self.total_episode}")
                 print(f"Constraint Violation during training: {self.count_tem_train}")
                 print(f"Percentage of episodes in which restriction violation occurred: {100*(self.count_tem_train/self.total_episode)}")
+                print(f"SOH: {soh}")
                 print("------------------------------------------------------------")
                 print("Running validation...")
                 self.evaluate()
