@@ -261,7 +261,7 @@ class DDPG:
             observation = observation_next
             c = self._env.get_constraint_values()
 
-            if observation['agent_position'] > 1:
+            if observation['agent_position'][0] > 1:
                 self.flag_rv = True
 
             # Make all updates at the end of the episode

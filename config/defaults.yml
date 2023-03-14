@@ -192,7 +192,7 @@ arguments:
           - name: "steps_per_epoch"
             default: 6000   # Por default = 6000
           - name: "evaluation_steps"
-            default: 2500  # Por default = 1500
+            default: 1500  # Por default = 1500
           - name: "batch_size"
             default: 256   # Por default = 256
           - name: "max_episode_length"
@@ -204,13 +204,13 @@ arguments:
           - name: "polyak"
             default: 0.995  #default: 0.995
           - name: "actor_lr"
-            default: 0.00001  # Por default = 0.001
+            default: 0.0001  # Por default = 0.001
           - name: "critic_lr"
-            default: 0.0001 # Por default = 0.001
+            default: 0.001 # Por default = 0.001
           - name: "start_steps"
             default: 500     # Por default = 500
           - name: "action_noise_range"
-            default: 0.01 #default: 0.01 (0.3)
+            default: 0.05 #default: 0.01 (0.3)
           - name: "use_gpu"
             default: true
           - name: "reward_scale"
@@ -226,7 +226,7 @@ arguments:
         help: "Hyperparameters for constraint model (g)"
         properties:
           - name: "layers"
-            default: [2, 2]   #default: [2, 2]
+            default: [10, 10]   #default: [2, 2]
           - name: "init_bound"
             default: 0.03  #default: 0.03
       - name: "trainer"
@@ -241,7 +241,7 @@ arguments:
           - name: "steps_per_epoch"
             default: 6000 #default:6000
           - name: "epochs"
-            default: 5 #default:5
+            default: 15 #default:5
           - name: "evaluation_steps"
             default: 1500 #default: 1500
           - name: "replay_buffer_size"

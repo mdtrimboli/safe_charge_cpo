@@ -192,13 +192,13 @@ plt.savefig('curves/Ito_var.png', dpi=600)
 plt.show()
 """
 
-"""
+
 ### PERFILES
 
 sample = 300
-limit_1 = 171
-limit_2 = 172
-limit_4 = 171
+limit_1 = 207
+limit_2 = 208
+limit_4 = 209
 
 t_curves_i1 = loadtxt(open('curves/T_DDPG_01_f.csv', 'rb'), delimiter=",")[:limit_1]
 t_curves_i2 = loadtxt(open('curves/T_DDPG_02_f.csv', 'rb'), delimiter=",")[:limit_2]
@@ -223,7 +223,7 @@ soc_curves_4 = loadtxt(open('curves/SOC_DDPG_04_f.csv', 'rb'), delimiter=",")[:l
 #RS5=230, RS12=228, DDPG=179, SL=183
 #Again
 #RS5=230, RS12=205, DDPG=179, SL=171
-fig = plt.figure(figsize=(8, 6))
+fig = plt.figure(figsize=(10, 6))
 fig.subplots_adjust(hspace=0.4)
 ax1 = fig.add_subplot(221)
 ax2 = fig.add_subplot(222)
@@ -278,14 +278,14 @@ ax3.set_title('State of Charge')
 ax4.set_title('Action Current')
 ##############################################
 #IMPORTANTE!!!
-plt.savefig('curves/Eval_31Ene_DDPG.png', dpi=600)
+plt.savefig('curves/Eval_22Feb_DDPG_RS12.png', dpi=600)
 plt.show()
 ##############################################
+
+
 """
-
-
 # DEGRADACION DEL SOH
-fig2 = plt.figure(figsize=(8, 6))
+fig2 = plt.figure(figsize=(10, 6))
 
 soh_SL = open('curves/SOH_DDPG_SL.csv', 'rb')
 soh_DDPG = open('curves/SOH_DDPG_01.csv', 'rb')
@@ -316,4 +316,4 @@ plt.xlabel('Steps')
 plt.legend(loc="lower left")
 plt.savefig('curves/SOH_compare.png', dpi=600)
 plt.show()
-
+"""

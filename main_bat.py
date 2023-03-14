@@ -7,6 +7,7 @@ import copy
 from safe_explorer.core.config import Config
 from safe_explorer.env.ballnd import BallND
 from safe_explorer.env.spaceship import Spaceship
+from safe_explorer.env.battery2 import Battery2
 from safe_explorer.env.battery import Battery
 from safe_explorer.ddpg.actor import Actor
 from safe_explorer.ddpg.critic import Critic
@@ -48,8 +49,8 @@ class Trainer:
         reset_soh = 0.9
         np.save("curves/final_soh.npy", reset_soh)
 
-        env = BallND() if self._config.task == "ballnd" else Battery()
-
+        #env = BallND() if self._config.task == "ballnd" else Battery()
+        env = Battery2()
 
         switch = True
 
@@ -95,12 +96,15 @@ class Trainer:
 
         ddpg.evaluate()
 
+        """
         if SAVE:
             np.savetxt("curves/Rew_DDPG_SL.csv", ddpg.episodic_reward_buffer, delimiter=", ", fmt='% s')
             np.savetxt("curves/Len_DDPG_SL.csv", ddpg.episodic_length_buffer, delimiter=", ", fmt='% s')
             np.savetxt("curves/SOH_DDPG_SL.csv", ddpg.soh, delimiter=", ", fmt='% s')
             np.savetxt("curves/ALVConst_Train_DDPG_SL.csv", ddpg.accum_lv_train, delimiter=", ", fmt='% s')
             #np.savetxt("curves/ALVConst_Eval_DDPG_SL.csv", ddpg.accum_lv_eval, delimiter=", ", fmt='% s')
+        """
+
 
         if LOAD:
             np.savetxt("curves/T_DDPG_04_f.csv", ddpg.temp, delimiter=", ", fmt='% s')
