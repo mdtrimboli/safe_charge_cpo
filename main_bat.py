@@ -50,7 +50,7 @@ class Trainer:
         np.save("curves/final_soh.npy", reset_soh)
 
         #env = BallND() if self._config.task == "ballnd" else Battery()
-        env = Battery2()
+        env = Battery()
 
         switch = True
 
