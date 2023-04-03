@@ -1,6 +1,6 @@
 import multiprocessing
-from safe_explorer.torch_cpo.utils.replay_memory import Memory
-from safe_explorer.torch_cpo.utils.torch import *
+from safe_explorer.cpo.utils.replay_memory import Memory
+from safe_explorer.cpo.utils.torch import *
 import math
 import time
 import pdb
@@ -44,6 +44,11 @@ def collect_samples(pid, queue, env, policy, custom_reward,
     """
     while num_steps < min_batch_size:
         state = env.reset()
+        state = list(state.values())
+        state_v = []
+        for k in range(3):                    # range(dim_obs_state)
+            state_v.append(state[k][0])       #Agregado 29/03
+        state = state_v
         if running_state is not None:
             state = running_state(state)
         reward_episode = 0
@@ -64,6 +69,12 @@ def collect_samples(pid, queue, env, policy, custom_reward,
             env_reward_episode += reward
             env_reward_episode_list_1.append(reward)
 
+            next_state = list(next_state.values())
+            next_state_v = []
+            for k in range(3):  # range(dim_obs_state)
+                next_state_v.append(next_state[k][0])  # Agregado 29/03
+            next_state = state_v
+
             if running_state is not None:
                 next_state = running_state(next_state)
 
@@ -71,8 +82,10 @@ def collect_samples(pid, queue, env, policy, custom_reward,
 
             memory.push(state, action, mask, next_state, reward)
 
+            """
             if render:
                 env.render()
+            """
             if done:
                 break
 

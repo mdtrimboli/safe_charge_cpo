@@ -59,8 +59,8 @@ class Battery(gym.Env):
             self.ocv = self.calculate_ocv(self.soc)
         else:
             self.soc = self._config.init_soc
-            #self.soh = self._config.init_soh
-            self.soh = np.load('curves/final_soh.npy')  # self._config.init_soh
+            self.soh = self._config.init_soh
+            #self.soh = np.load('curves/final_soh.npy')  # self._config.init_soh
             self.Tc = self._config.Tc       #default:23
             self.Ts = self._config.Ts        #default:23
             self.vc1 = 0
@@ -125,6 +125,7 @@ class Battery(gym.Env):
         return np.concatenate([min_constraints, max_constraint])
 
     def step(self, action):
+        num_cv = 0
 
         # Increment time
         self._update_time()

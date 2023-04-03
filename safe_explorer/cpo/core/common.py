@@ -1,5 +1,5 @@
 import torch
-from safe_explorer.torch_cpo.utils import to_device
+from safe_explorer.cpo.utils import to_device
 import numpy as np
 import pdb
 

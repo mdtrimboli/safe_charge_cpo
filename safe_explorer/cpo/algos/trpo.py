@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.optimize
-from safe_explorer.torch_cpo.utils import *
+from safe_explorer.cpo.utils import *
 import pdb
 
 def conjugate_gradients(Avp_f, b, nsteps, rdotr_tol=1e-10):

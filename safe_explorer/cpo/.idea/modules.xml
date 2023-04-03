@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/torch_cpo.iml" filepath="$PROJECT_DIR$/.idea/torch_cpo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/PyTorch-CPO.iml" filepath="$PROJECT_DIR$/.idea/PyTorch-CPO.iml" />
     </modules>
   </component>
 </project>

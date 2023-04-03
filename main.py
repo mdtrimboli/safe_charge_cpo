@@ -1,39 +1,41 @@
 import argparse
 import gym
 import os
-#import sys
+import sys
 import pickle
 import time
-#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from functional import seq
-
-from safe_explorer.torch_cpo.utils.torch import *
-from safe_explorer.torch_cpo.utils.argument_parsing import *
-from safe_explorer.torch_cpo.utils.model_saving import *
-from safe_explorer.torch_cpo.utils.zfilter import *
-from safe_explorer.torch_cpo.utils.tools import *
 import statistics as st
-from safe_explorer.torch_cpo.models.continuous_policy import Policy
-from safe_explorer.torch_cpo.models.critic import Value
-from safe_explorer.torch_cpo.models.discrete_policy import DiscretePolicy
-from safe_explorer.torch_cpo.algos.trpo import trpo_step
-from safe_explorer.torch_cpo.algos.cpo import cpo_step
-from safe_explorer.torch_cpo.core.common import estimate_advantages, estimate_constraint_value
-from safe_explorer.torch_cpo.core.agent import Agent
+import pdb
+
 from safe_explorer.env.battery import Battery
 
+from safe_explorer.cpo.utils.torch import *
+from safe_explorer.cpo.utils.argument_parsing import *
+from safe_explorer.cpo.utils.zfilter import *
+from safe_explorer.cpo.utils.model_saving import *
+from safe_explorer.cpo.utils.tools import *
 
-import pdb
-CUDA_LAUNCH_BLOCKING=1
+from safe_explorer.cpo.models.continuous_policy import Policy
+from safe_explorer.cpo.models.critic import Value
+from safe_explorer.cpo.models.discrete_policy import DiscretePolicy
+
+from safe_explorer.cpo.algos.trpo import trpo_step
+from safe_explorer.cpo.algos.cpo import cpo_step
+
+from safe_explorer.cpo.core.common import estimate_advantages, estimate_constraint_value
+from safe_explorer.cpo.core.agent import Agent
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'safe_explorer/cpo')))
+
+CUDA_LAUNCH_BLOCKING = 1
 
 #summarizing using tensorboard
-#from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 
 # Returns the current local date
 from datetime import date
 today = date.today()
-print("Today date is: ", today)
+#print("Today date is: ", today)
 
 # Parse arguments 
 args = parse_all_arguments()
@@ -42,41 +44,51 @@ dtype = torch.float64
 torch.set_default_dtype(dtype)
 device = torch.device('cuda', index=args.gpu_index) if torch.cuda.is_available() else torch.device('cpu')
 if torch.cuda.is_available():
-    print('using gpu')
     torch.cuda.set_device(args.gpu_index)
 
-"""environment"""
+
+# ENVIRONMENT
+
+# env = gym.make(args.env_name)
 env = Battery()
-state_dim =  observation_dim = (seq(env.observation_space.spaces.values())
-                                .map(lambda x: x.shape[0])
-                                .sum())
-#state_dim = env.observation_space.shape[0]
+state_dim = len(env.observation_space.keys())
+#print(state_dim)
 is_disc_action = len(env.action_space.shape) == 0
-print(env.action_space.shape)
+#print(env.action_space.shape)
 running_state = ZFilter((state_dim,), clip=5)
 
-"""seeding"""
+# SEEDING
+
 np.random.seed(args.seed)
 torch.manual_seed(args.seed)
-#env.seed(args.seed)
+# env.seed(args.seed)
 
+
+# CREATE ALL PATHS TO SAVE LEARNED MODELS/DATA
 """
-#create all the paths to save learned models/data
 save_info_obj = save_info(assets_dir(), args.exp_num, args.exp_name, args.env_name) #model saving object
 save_info_obj.create_all_paths() # create all paths
-
 writer = SummaryWriter(os.path.join(assets_dir(), save_info_obj.saving_path, 'runs/')) #tensorboard summary
 """
 
 
-"""define actor and critic"""
+# DEFINE ACTOR & CRITIC
+"""
 if args.model_path is None:
-    policy_net = Policy(state_dim, env.action_space.shape[0], log_std=args.log_std)
+    if is_disc_action:
+        policy_net = DiscretePolicy(state_dim, env.action_space.n)
+    else:
+        policy_net = Policy(state_dim, env.action_space.shape[0], log_std=args.log_std)
     value_net = Value(state_dim)
 else:
-    policy_net, value_net, running_state = pickle.load(open(args.model_path, "rb"))     # Cargar modelo creo
+    policy_net, value_net, running_state = pickle.load(open(args.model_path, "rb"))
+"""
+
+policy_net = Policy(state_dim, env.action_space.shape[0], log_std=args.log_std)     # ANN Actor
+value_net = Value(state_dim)                                                        # ANN Critic
 policy_net.to(device)
 value_net.to(device)
+
 
 """create agent"""
 agent = Agent(env, policy_net, device, running_state=running_state, render=args.render, num_threads=args.num_threads)
@@ -100,7 +112,8 @@ def update_params(batch, d_k=0):
     advantages, returns = estimate_advantages(rewards, masks, values, args.gamma, args.tau, device)
     
     if args.algo_name == "CPO":
-        costs = constraint_cost(states, actions)
+
+        costs = constraint_cost(states[:, 0], actions)
         cost_advantages, _ = estimate_advantages(costs, masks, values, args.gamma, args.tau, device)
         constraint_value = estimate_constraint_value(costs, masks, args.gamma, device)
         constraint_value = constraint_value[0]
@@ -142,19 +155,21 @@ def main_loop():
         # define initial d_k
         d_k = args.max_constraint
         # define annealing factor
-        if args.anneal == True:
+        if args.anneal == False:        #por default: True
             e_k = args.annealing_factor
         else:
             e_k = 0            
     
     # for saving the best model
     best_avg_reward = 0
-    best_std = 5       #20 para entornos como Cartpole
-
+    if args.env_name == "CartPole-v0" or args.env_name == "CartPole-v1" or args.env_name == "MountainCar-v0":
+        best_std = 20
+    else:
+        best_std = 5
     
     for i_iter in range(args.max_iter_num):
         """generate multiple trajectories that reach the minimum batch_size"""
-        batch, log = agent.collect_samples(args.min_batch_size)         # TODO: Corregir PUSH o env paara que coincidan los tipos de variables (Dict vs Float)
+        batch, log = agent.collect_samples(args.min_batch_size)
         
         t0 = time.time()
         if args.algo_name == "CPO":
@@ -170,7 +185,7 @@ def main_loop():
         v_loss_list.append(v_loss)
         p_loss_list.append(p_loss)
         cost_loss_list.append(cost_loss)
-        rewards_std.append(log['std_reward']) 
+        #rewards_std.append(log['std_reward'])
         env_avg_reward.append(log['env_avg_reward'])
         num_of_steps.append(log['num_steps'])
         num_of_episodes.append(log['num_episodes'])
@@ -190,7 +205,6 @@ def main_loop():
         writer.add_scalar('num of steps', log['num_steps'], i_iter)
         """
 
-
         # evaluate the current policy
         running_state.fix = True  #Fix the running state
         agent.num_threads = 20
@@ -199,7 +213,7 @@ def main_loop():
         else:
             agent.mean_action = True
         seed = np.random.randint(1,1000)
-        agent.env.seed(seed)
+        #agent.env.seed(seed)
         eval_reward_type = 4
         _, eval_log = agent.collect_samples(20000)
         running_state.fix = False
@@ -212,8 +226,9 @@ def main_loop():
             
         # print learning data on screen     
         if i_iter % args.log_interval == 0:
-            print('{}\tT_sample {:.4f}\tT_update {:.4f}\tR_avg {:.2f}\tTest_R_avg {:.2f}\tTest_R_std {:.2f}'.format( i_iter, log['sample_time'], t1-t0, log['env_avg_reward'], eval_log['env_avg_reward'], eval_log['std_reward']))              
-        
+            print("Iter: {}, T_sample: {}, T_update : {}, R_avg : {}, Test_R_avg : {}"
+                  .format(i_iter, log['sample_time'], log['env_avg_reward'], t1-t0, eval_log['env_avg_reward']))
+
         # save the best model
         if eval_log['env_avg_reward'] >= best_avg_reward and eval_log['std_reward'] <= best_std:
             print('Saving new best model !!!!')
@@ -235,8 +250,11 @@ def main_loop():
         
     # dump expert_avg_reward, num_of_steps, num_of_episodes
     #save_info_obj.dump_lists(avg_reward, num_of_steps, num_of_episodes, total_num_episodes, total_num_steps, rewards_std, env_avg_reward, v_loss_list, p_loss_list, eval_avg_reward, eval_avg_reward_std)
-
+    
     print('Best eval R:', best_avg_reward)
     return best_avg_reward, best_std, iter_for_best_avg_reward
 
-main_loop()
+
+if __name__ == "__main__":
+    print("Today date is: ", today)
+    main_loop()

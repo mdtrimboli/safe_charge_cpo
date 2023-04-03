@@ -27,12 +27,12 @@ def parse_all_arguments():
                         help='gae (default: 0.95)')
     parser.add_argument('--l2-reg', type=float, default=1e-3, metavar='G',
                         help='l2 regularization of value function (default: 1e-3)')
-    parser.add_argument('--learning-rate', type=float, default=1e-3, metavar='G',
+    parser.add_argument('--learning-rate', type=float, default=1e-4, metavar='G',
                         help='gae (default: 3e-4)')
     
     # GPU index, multi-threading and seeding
     parser.add_argument('--gpu-index', type=int, default=0, metavar='N')
-    parser.add_argument('--num-threads', type=int, default=3, metavar='N',
+    parser.add_argument('--num-threads', type=int, default=4, metavar='N',
                         help='number of threads for agent (default: 4)')
     parser.add_argument('--seed', type=int, default=1, metavar='N',
                         help='random seed (default: 1)')
@@ -59,7 +59,7 @@ def parse_all_arguments():
                         help='max kl value (default: 1e-2)')
         parser.add_argument('--damping', type=float, default=1e-2, metavar='G',
                         help='damping (default: 1e-2)')
-        parser.add_argument('--max-constraint', type=float, default=1e-3, metavar='G',
+        parser.add_argument('--max-constraint', type=float, default=1, metavar='G',
                         help='max constraint value (default: 1e-2)')
         parser.add_argument('--annealing_factor', type=float, default=1e-6, metavar='G',
                         help='annealing factor of constraint (default: 1e-2)')

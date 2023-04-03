@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import scipy.optimize
-from safe_explorer.torch_cpo.utils import *
+from safe_explorer.cpo.utils import *
 import pdb
 
 class bcolors:
